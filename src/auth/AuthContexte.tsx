@@ -5,11 +5,14 @@
 */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { lienAuth } from '../lib/lienAuth'
+import { AUCUN_DROIT, TOUS_LES_DROITS, type Droits } from '../lib/droits'
 import { messageErreur, modeDemo, supabase, type Profil } from '../lib/supabase'
 
 interface Auth {
   pret: boolean
   profil: Profil | null
+  /** Droits de la personne connectée (tous pour l'admin, cochés pour un chef, aucun pour un agent). */
+  droits: Droits | null
   /** Vrai si la personne arrive par un lien d'invitation ou de réinitialisation. */
   doitChoisirMotDePasse: boolean
   erreurLien: string | null
@@ -31,6 +34,16 @@ const PROFIL_DEMO = (admin: boolean): Profil => ({
   actif: true,
 })
 
+async function chargerDroits(p: Profil): Promise<Droits> {
+  if (p.role === 'admin') return TOUS_LES_DROITS
+  if (p.role !== 'chef') return AUCUN_DROIT
+  const { data } = await supabase!.from('permissions_chefs').select('*').eq('chef_id', p.id).maybeSingle()
+  if (!data) return AUCUN_DROIT
+  const d = { ...AUCUN_DROIT }
+  for (const k of Object.keys(d) as (keyof Droits)[]) d[k] = Boolean((data as Record<string, unknown>)[k])
+  return d
+}
+
 async function chargerProfil(id: string): Promise<Profil | null> {
   const { data, error } = await supabase!
     .from('profils')
@@ -44,6 +57,7 @@ async function chargerProfil(id: string): Promise<Profil | null> {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [pret, setPret] = useState(modeDemo)
   const [profil, setProfil] = useState<Profil | null>(null)
+  const [droits, setDroits] = useState<Droits | null>(null)
   const [doitChoisirMotDePasse, setDoitChoisir] = useState(Boolean(lienAuth.type))
   const [erreurLien, setErreurLien] = useState<string | null>(lienAuth.erreur ? messageErreur({ message: lienAuth.erreur }) : null)
 
@@ -51,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const appliquerSession = useCallback(async (userId: string | null) => {
     if (!userId) {
       setProfil(null)
+      setDroits(null)
       setPret(true)
       return
     }
@@ -58,8 +73,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!p || !p.actif) {
       await supabase!.auth.signOut()
       setProfil(null)
+      setDroits(null)
       setErreurLien(p ? 'Ce compte est désactivé. Contactez votre responsable.' : 'Compte introuvable. Contactez votre responsable.')
     } else {
+      setDroits(await chargerDroits(p))
       setProfil(p)
     }
     setPret(true)
@@ -88,12 +105,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       pret,
       profil,
+      droits,
       doitChoisirMotDePasse,
       erreurLien,
       connexion: async (email, motDePasse) => {
         setErreurLien(null)
         if (modeDemo) {
-          setProfil(PROFIL_DEMO(email.toLowerCase().includes('admin')))
+          const p = PROFIL_DEMO(email.toLowerCase().includes('admin'))
+          setDroits(p.role === 'admin' ? TOUS_LES_DROITS : AUCUN_DROIT)
+          setProfil(p)
           return null
         }
         const { data, error } = await supabase!.auth.signInWithPassword({ email: email.trim(), password: motDePasse })
@@ -104,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       deconnexion: async () => {
         if (!modeDemo) await supabase!.auth.signOut()
         setProfil(null)
+        setDroits(null)
         setDoitChoisir(false)
       },
       envoyerLienReinitialisation: async (email) => {
@@ -123,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return null
       },
     }),
-    [pret, profil, doitChoisirMotDePasse, erreurLien, appliquerSession],
+    [pret, profil, droits, doitChoisirMotDePasse, erreurLien, appliquerSession],
   )
 
   return <Ctx.Provider value={valeur}>{children}</Ctx.Provider>

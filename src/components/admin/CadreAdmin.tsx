@@ -18,24 +18,27 @@ import { NOTIFICATIONS_ADMIN } from '../../demo/donnees-demo'
 import { Lien, naviguer } from '../../lib/routeur'
 import { useAuth } from '../../auth/AuthContexte'
 import { modeDemo } from '../../lib/supabase'
+import { autorise, type Exigence } from '../../lib/droits'
 
 export type RubriqueAdmin = 'tableau' | 'agents' | 'missions' | 'plannings' | 'disponibilites' | 'sites' | 'rapports' | 'parametres'
 
-export const RUBRIQUES: { id: RubriqueAdmin; libelle: string; vers: string; Icone: typeof LuHouse }[] = [
-  { id: 'tableau', libelle: 'Tableau de bord', vers: '/admin', Icone: LuHouse },
-  { id: 'agents', libelle: 'Agents', vers: '/admin/agents', Icone: LuUsers },
-  { id: 'missions', libelle: 'Missions', vers: '/admin/missions', Icone: LuClipboardList },
-  { id: 'plannings', libelle: 'Plannings', vers: '/admin/plannings', Icone: LuCalendarDays },
-  { id: 'disponibilites', libelle: 'Disponibilités', vers: '/admin/disponibilites', Icone: LuCalendarCheck },
-  { id: 'sites', libelle: 'Sites / Clients', vers: '/admin/sites', Icone: LuBuilding2 },
-  { id: 'rapports', libelle: 'Rapports', vers: '/admin/rapports', Icone: LuChartColumn },
-  { id: 'parametres', libelle: 'Paramètres', vers: '/admin/parametres', Icone: LuSettings },
+/** Rubriques du menu et droit nécessaire pour qu'un chef les voie (null = toujours, 'admin' = jamais). */
+export const RUBRIQUES: { id: RubriqueAdmin; libelle: string; vers: string; Icone: typeof LuHouse; exigence: Exigence }[] = [
+  { id: 'tableau', libelle: 'Tableau de bord', vers: '/admin', Icone: LuHouse, exigence: null },
+  { id: 'agents', libelle: 'Agents', vers: '/admin/agents', Icone: LuUsers, exigence: 'voir_agents' },
+  { id: 'missions', libelle: 'Missions', vers: '/admin/missions', Icone: LuClipboardList, exigence: ['voir_plannings', 'gerer_affectations', 'suivre_reponses'] },
+  { id: 'plannings', libelle: 'Plannings', vers: '/admin/plannings', Icone: LuCalendarDays, exigence: ['voir_plannings', 'gerer_affectations'] },
+  { id: 'disponibilites', libelle: 'Disponibilités', vers: '/admin/disponibilites', Icone: LuCalendarCheck, exigence: 'voir_disponibilites' },
+  { id: 'sites', libelle: 'Sites / Clients', vers: '/admin/sites', Icone: LuBuilding2, exigence: 'voir_sites' },
+  { id: 'rapports', libelle: 'Rapports', vers: '/admin/rapports', Icone: LuChartColumn, exigence: 'exporter' },
+  { id: 'parametres', libelle: 'Paramètres', vers: '/admin/parametres', Icone: LuSettings, exigence: 'admin' },
 ]
 
 function Menu({ actif, auClic }: { actif: RubriqueAdmin; auClic?: () => void }) {
+  const { profil, droits } = useAuth()
   return (
     <nav className="flex flex-col gap-1">
-      {RUBRIQUES.map(({ id, libelle, vers, Icone }) => {
+      {RUBRIQUES.filter((r) => autorise(r.exigence, profil, droits)).map(({ id, libelle, vers, Icone }) => {
         const estActif = id === actif
         return (
           <Lien

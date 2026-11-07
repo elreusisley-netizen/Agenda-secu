@@ -3,7 +3,8 @@ import { espaceDe, useAuth } from './auth/AuthContexte'
 import { BadgeDemo } from './components/BadgeDemo'
 import { Coche } from './components/Logo'
 import { MessageFlash } from './components/MessageFlash'
-import type { RubriqueAdmin } from './components/admin/CadreAdmin'
+import { RUBRIQUES, type RubriqueAdmin } from './components/admin/CadreAdmin'
+import { autorise } from './lib/droits'
 import { correspond, naviguer, useChemin } from './lib/routeur'
 import type { Role } from './lib/supabase'
 import AccueilAgent from './pages/agent/AccueilAgent'
@@ -17,6 +18,7 @@ import NouveauMotDePasse from './pages/agent/NouveauMotDePasse'
 import Notifications from './pages/agent/Notifications'
 import Profil from './pages/agent/Profil'
 import EcranAVenir from './pages/admin/EcranAVenir'
+import Parametres from './pages/admin/Parametres'
 import PlanningMissions from './pages/admin/PlanningMissions'
 import TableauDeBord from './pages/admin/TableauDeBord'
 
@@ -28,7 +30,7 @@ type Acces = 'public' | Role[]
 const AGENT: Role[] = ['agent']
 const GESTION: Role[] = ['admin', 'chef']
 
-const ROUTES: { motif: string; acces: Acces; ecran: (p: Record<string, string>) => ReactNode }[] = [
+const ROUTES: { motif: string; acces: Acces; rubrique?: RubriqueAdmin; ecran: (p: Record<string, string>) => ReactNode }[] = [
   { motif: '/connexion', acces: 'public', ecran: () => <Connexion /> },
   { motif: '/mot-de-passe-oublie', acces: 'public', ecran: () => <MotDePasseOublie /> },
   { motif: '/nouveau-mot-de-passe', acces: 'public', ecran: () => <NouveauMotDePasse /> },
@@ -39,11 +41,13 @@ const ROUTES: { motif: string; acces: Acces; ecran: (p: Record<string, string>) 
   { motif: '/agent/planning', acces: AGENT, ecran: () => <MonPlanning /> },
   { motif: '/agent/profil', acces: AGENT, ecran: () => <Profil /> },
   { motif: '/agent/notifications', acces: AGENT, ecran: () => <Notifications /> },
-  { motif: '/admin', acces: GESTION, ecran: () => <TableauDeBord /> },
-  { motif: '/admin/plannings', acces: GESTION, ecran: () => <PlanningMissions /> },
-  ...(['agents', 'missions', 'disponibilites', 'sites', 'rapports', 'parametres'] as RubriqueAdmin[]).map((r) => ({
+  { motif: '/admin', acces: GESTION, rubrique: 'tableau', ecran: () => <TableauDeBord /> },
+  { motif: '/admin/plannings', acces: GESTION, rubrique: 'plannings', ecran: () => <PlanningMissions /> },
+  { motif: '/admin/parametres', acces: ['admin'], rubrique: 'parametres', ecran: () => <Parametres /> },
+  ...(['agents', 'missions', 'disponibilites', 'sites', 'rapports'] as RubriqueAdmin[]).map((r) => ({
     motif: `/admin/${r}`,
-    acces: (r === 'parametres' ? ['admin'] : GESTION) as Acces,
+    acces: GESTION as Acces,
+    rubrique: r,
     ecran: () => <EcranAVenir rubrique={r} />,
   })),
 ]
@@ -58,7 +62,7 @@ function Chargement() {
 
 export default function App() {
   const chemin = useChemin()
-  const { pret, profil, doitChoisirMotDePasse } = useAuth()
+  const { pret, profil, droits, doitChoisirMotDePasse } = useAuth()
 
   let route = ROUTES.find((r) => correspond(r.motif, chemin))
   const params = route ? correspond(route.motif, chemin)! : {}
@@ -75,6 +79,11 @@ export default function App() {
       redirection = '/connexion'
     } else if (!route.acces.includes(profil.role)) {
       redirection = espaceDe(profil.role)
+    } else if (route.rubrique) {
+      // Un chef n'ouvre que les rubriques pour lesquelles il a le droit.
+      const rubrique = route.rubrique
+      const exigence = RUBRIQUES.find((r) => r.id === rubrique)?.exigence ?? null
+      if (!autorise(exigence, profil, droits)) redirection = '/admin'
     }
   }
 

@@ -45,3 +45,24 @@ export function messageErreur(e: unknown): string {
   if (/expired|invalid.*(token|link)|otp/i.test(m)) return 'Ce lien a expiré ou a déjà été utilisé. Demandez-en un nouveau.'
   return 'Une erreur est survenue. Réessayez.'
 }
+
+/** Appelle la fonction serveur « gerer-comptes » (réservée à l'administrateur). Renvoie un message d'erreur ou null. */
+export async function gererComptes(corps: Record<string, unknown>): Promise<{ erreur: string | null; id?: string }> {
+  if (!supabase) return { erreur: null, id: 'demo-' + Date.now() }
+  const { data, error } = await supabase.functions.invoke('gerer-comptes', { body: corps })
+  if (error) {
+    // Les erreurs détaillées de la fonction sont dans le corps de la réponse.
+    try {
+      const contexte = (error as { context?: Response }).context
+      const detail = contexte ? await contexte.json() : null
+      if (detail?.erreur) return { erreur: String(detail.erreur) }
+    } catch {
+      /* réponse illisible */
+    }
+    if (/failed to send|fetch|network/i.test(error.message)) {
+      return { erreur: 'Service indisponible. Vérifiez que la fonction « gerer-comptes » est bien installée dans Supabase.' }
+    }
+    return { erreur: 'L’opération a échoué. Réessayez.' }
+  }
+  return { erreur: null, id: (data as { id?: string } | null)?.id }
+}
