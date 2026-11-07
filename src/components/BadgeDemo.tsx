@@ -34,7 +34,7 @@ export function BadgeDemo() {
           <p className="mb-3 text-xs leading-relaxed text-nuit-600">
             {modeDemo
               ? 'Toutes les données affichées sont fictives. Rien n’est enregistré : un rechargement remet la démo à zéro.'
-              : 'La connexion est réelle. Les missions, plannings et chiffres affichés restent des exemples fictifs jusqu’aux étapes suivantes.'}
+              : 'La connexion est réelle. Les missions, plannings et chiffres affichés sont encore des exemples fictifs. Les vraies données seront bientôt disponibles.'}
           </p>
           <div className="grid gap-1.5">
             {modeDemo && (

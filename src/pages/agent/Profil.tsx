@@ -40,7 +40,7 @@ export default function Profil() {
           </button>
         )}
         <p className="mt-4 px-1 text-xs text-nuit-600">
-          Réglages des notifications et historique personnel : ajoutés à l'étape 10 (espace agent complet).
+          Réglages des notifications et historique personnel : bientôt disponibles.
         </p>
         <button
           onClick={async () => {

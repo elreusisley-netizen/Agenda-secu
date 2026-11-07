@@ -112,7 +112,7 @@ export default function TableauDeBord() {
           </div>
         </div>
       </section>
-      <p className="mt-4 text-xs text-nuit-600">Chiffres de démonstration, repris des maquettes. Ils seront calculés à partir des vraies données à l'étape 6.</p>
+      <p className="mt-4 text-xs text-nuit-600">Chiffres d’exemple : les indicateurs réels seront bientôt disponibles.</p>
     </CadreAdmin>
   )
 }
