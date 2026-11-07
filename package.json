@@ -1,7 +1,7 @@
 {
   "name": "agenda-secu",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "AGENDA SECU — gestion des plannings mensuels des agents de sécurité (étape 4 : connexion)",
   "type": "module",
   "scripts": {

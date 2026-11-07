@@ -133,7 +133,7 @@ export const nbConfirmes = (m: Mission) => m.affectations.filter((a) => a.statut
 
 export const nomAgent = (a?: AgentCourt) => (a ? `${a.prenom} ${a.nom}`.trim() : 'Agent supprimé')
 
-function erreur(e: unknown): string {
+export function traduireErreur(e: unknown): string {
   const m = (e as { message?: string })?.message ?? ''
   if (/chevauchement|nombre d'agents|seul l'administrateur|il y a déjà|agent actif|réservée|introuvable|ne vous concerne/i.test(m)) return m
   if (/check constraint|violates check/i.test(m)) return 'Horaires invalides : une mission dure au maximum 24 heures.'
@@ -254,7 +254,7 @@ export async function creerMission(s: SaisieMission): Promise<string | null> {
     p_consignes: s.consignes,
     p_agents: s.agents,
   })
-  return error ? erreur(error) : null
+  return error ? traduireErreur(error) : null
 }
 
 export async function modifierMission(id: string, s: SaisieMission): Promise<string | null> {
@@ -274,7 +274,7 @@ export async function modifierMission(id: string, s: SaisieMission): Promise<str
     p_nb: s.nb,
     p_consignes: s.consignes,
   })
-  return error ? erreur(error) : null
+  return error ? traduireErreur(error) : null
 }
 
 /** Annule la mission : les agents encore concernés sont prévenus. */
@@ -287,7 +287,7 @@ export async function annulerMission(m: Mission): Promise<string | null> {
     return null
   }
   const { error } = await supabase!.from('missions').update({ statut: 'annulee' }).eq('id', m.id)
-  return error ? erreur(error) : null
+  return error ? traduireErreur(error) : null
 }
 
 /** Rouvre une mission annulée (sans reproposer automatiquement aux agents). */
@@ -298,7 +298,7 @@ export async function rouvrirMission(m: Mission): Promise<string | null> {
     return null
   }
   const { error } = await supabase!.from('missions').update({ statut: 'ouverte' }).eq('id', m.id)
-  return error ? erreur(error) : null
+  return error ? traduireErreur(error) : null
 }
 
 /** Supprime définitivement la mission (les agents encore concernés sont prévenus avant). */
@@ -311,7 +311,7 @@ export async function supprimerMission(m: Mission): Promise<string | null> {
     return null
   }
   const { error } = await supabase!.from('missions').delete().eq('id', m.id)
-  return error ? erreur(error) : null
+  return error ? traduireErreur(error) : null
 }
 
 async function annulerAffectationsActives(m: Mission): Promise<string | null> {
@@ -322,7 +322,7 @@ async function annulerAffectationsActives(m: Mission): Promise<string | null> {
     return null
   }
   const { error } = await supabase!.from('affectations').update({ statut: 'annulee' }).in('id', ids)
-  return error ? erreur(error) : null
+  return error ? traduireErreur(error) : null
 }
 
 // ---------- Propositions (administrateur et chefs autorisés) ----------
@@ -339,14 +339,14 @@ export async function proposer(m: Mission, agentIds: string[]): Promise<string |
   }
   if (nouveaux.length) {
     const { error } = await supabase!.from('affectations').insert(nouveaux.map((agent_id) => ({ mission_id: m.id, agent_id })))
-    if (error) return erreur(error)
+    if (error) return traduireErreur(error)
   }
   if (aRelancer.length) {
     const { error } = await supabase!
       .from('affectations')
       .update({ statut: 'proposee', propose_le: new Date().toISOString() })
       .in('id', aRelancer.map((a) => a.id))
-    if (error) return erreur(error)
+    if (error) return traduireErreur(error)
   }
   return null
 }
@@ -358,7 +358,7 @@ export async function changerStatut(a: Affectation, statut: StatutAffectation): 
     return null
   }
   const { error } = await supabase!.from('affectations').update({ statut }).eq('id', a.id)
-  return error ? erreur(error) : null
+  return error ? traduireErreur(error) : null
 }
 
 /** Retire une proposition à laquelle l'agent n'a pas encore répondu. */
@@ -368,7 +368,7 @@ export async function retirerProposition(a: Affectation): Promise<string | null>
     return null
   }
   const { error } = await supabase!.from('affectations').delete().eq('id', a.id)
-  return error ? erreur(error) : null
+  return error ? traduireErreur(error) : null
 }
 
 // ---------- Planning du mois (administrateur) ----------
@@ -379,5 +379,5 @@ export async function changerStatutPlanning(p: Planning, statut: StatutPlanning)
     return null
   }
   const { error } = await supabase!.from('plannings').update({ statut }).eq('id', p.id)
-  return error ? erreur(error) : null
+  return error ? traduireErreur(error) : null
 }

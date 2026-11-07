@@ -6,7 +6,7 @@ import { MessageFlash } from './components/MessageFlash'
 import { RUBRIQUES, type RubriqueAdmin } from './components/admin/CadreAdmin'
 import { autorise } from './lib/droits'
 import { correspond, naviguer, useChemin } from './lib/routeur'
-import type { Role } from './lib/supabase'
+import { modeDemo, type Role } from './lib/supabase'
 import AccueilAgent from './pages/agent/AccueilAgent'
 import Connexion from './pages/agent/Connexion'
 import Disponibilites from './pages/agent/Disponibilites'
@@ -105,7 +105,7 @@ export default function App() {
     <>
       {route.ecran(params)}
       <MessageFlash />
-      {profil && <BadgeDemo />}
+      {profil && (modeDemo || chemin === '/agent/disponibilites') && <BadgeDemo />}
     </>
   )
 }

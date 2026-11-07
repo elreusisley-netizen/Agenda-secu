@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import {
   LuBell,
   LuBuilding2,
@@ -18,6 +18,7 @@ import { NOTIFICATIONS_ADMIN } from '../../demo/donnees-demo'
 import { Lien, naviguer } from '../../lib/routeur'
 import { useAuth } from '../../auth/AuthContexte'
 import { modeDemo } from '../../lib/supabase'
+import { chargerNotifications, depuis, marquerLues, type Notification } from '../../lib/espaceAgent'
 import { autorise, type Exigence } from '../../lib/droits'
 
 export type RubriqueAdmin = 'tableau' | 'agents' | 'missions' | 'plannings' | 'disponibilites' | 'sites' | 'rapports' | 'parametres'
@@ -72,6 +73,78 @@ function MenuDeroulant({ ouvert, fermer, children }: { ouvert: boolean; fermer: 
   )
 }
 
+/** Cloche : vraies notifications de l'administrateur ou du chef (réponses des agents…). */
+function Cloche({ ouvert, basculer, fermer }: { ouvert: boolean; basculer: () => void; fermer: () => void }) {
+  const [liste, setListe] = useState<Notification[] | null>(null)
+  const [vues, setVues] = useState<string[]>([])
+
+  useEffect(() => {
+    if (modeDemo) return
+    let actif = true
+    const lire = () =>
+      chargerNotifications()
+        .then((l) => actif && setListe(l))
+        .catch(() => undefined)
+    void lire()
+    const auRetour = () => document.visibilityState === 'visible' && void lire()
+    document.addEventListener('visibilitychange', auRetour)
+    return () => {
+      actif = false
+      document.removeEventListener('visibilitychange', auRetour)
+    }
+  }, [])
+
+  const nonLues = modeDemo ? NOTIFICATIONS_ADMIN.length : (liste ?? []).filter((n) => !n.lue && !vues.includes(n.id)).length
+
+  const ouvrir = () => {
+    basculer()
+    if (!ouvert && liste) {
+      const ids = liste.filter((n) => !n.lue).map((n) => n.id)
+      if (ids.length) {
+        setVues(ids)
+        void marquerLues(ids)
+      }
+    }
+  }
+
+  return (
+    <div className="relative">
+      <button onClick={ouvrir} aria-label="Notifications" className="relative p-1 text-nuit-900">
+        <LuBell className="h-5 w-5" />
+        {nonLues > 0 && <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-red-600" />}
+      </button>
+      <MenuDeroulant ouvert={ouvert} fermer={fermer}>
+        <p className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-nuit-600">Notifications{modeDemo && ' (démo)'}</p>
+        <div className="max-h-[60dvh] overflow-y-auto">
+          {modeDemo &&
+            NOTIFICATIONS_ADMIN.map((n) => (
+              <div key={n.id} className="rounded-lg px-2 py-2">
+                <p className="text-nuit-900">{n.texte}</p>
+                <p className="text-xs text-nuit-600">{n.quand}</p>
+              </div>
+            ))}
+          {!modeDemo && liste && liste.length === 0 && <p className="px-2 py-3 text-nuit-600">Aucune notification pour l’instant.</p>}
+          {!modeDemo &&
+            (liste ?? []).map((n) => (
+              <button
+                key={n.id}
+                onClick={() => {
+                  fermer()
+                  if (n.lien) naviguer(n.lien)
+                }}
+                className="block w-full rounded-lg px-2 py-2 text-left hover:bg-fond"
+              >
+                <p className={`text-nuit-900 ${!n.lue ? 'font-semibold' : ''}`}>{n.titre}</p>
+                <p className="text-[13px] text-nuit-700">{n.message}</p>
+                <p className="text-xs text-nuit-600">{depuis(n.cree_le)}</p>
+              </button>
+            ))}
+        </div>
+      </MenuDeroulant>
+    </div>
+  )
+}
+
 export function CadreAdmin({ actif, children }: { actif: RubriqueAdmin; children: ReactNode }) {
   const [tiroir, setTiroir] = useState(false)
   const [cloche, setCloche] = useState(false)
@@ -114,28 +187,14 @@ export function CadreAdmin({ actif, children }: { actif: RubriqueAdmin; children
             <Logo taille="petit" clair={false} />
           </span>
           <div className="ml-auto flex shrink-0 items-center gap-4 lg:ml-0">
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setCloche((o) => !o)
-                  setCompte(false)
-                }}
-                aria-label="Notifications"
-                className="relative p-1 text-nuit-900"
-              >
-                <LuBell className="h-5 w-5" />
-                <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-red-600" />
-              </button>
-              <MenuDeroulant ouvert={cloche} fermer={() => setCloche(false)}>
-                <p className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-nuit-600">Notifications (démo)</p>
-                {NOTIFICATIONS_ADMIN.map((n) => (
-                  <div key={n.id} className="rounded-lg px-2 py-2 hover:bg-fond">
-                    <p className="text-nuit-900">{n.texte}</p>
-                    <p className="text-xs text-nuit-600">{n.quand}</p>
-                  </div>
-                ))}
-              </MenuDeroulant>
-            </div>
+            <Cloche
+              ouvert={cloche}
+              basculer={() => {
+                setCloche((o) => !o)
+                setCompte(false)
+              }}
+              fermer={() => setCloche(false)}
+            />
             <div className="relative">
               <button
                 onClick={() => {

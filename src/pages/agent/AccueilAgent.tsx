@@ -4,11 +4,9 @@ import { LuBell, LuBriefcaseBusiness, LuCalendarCheck, LuCalendarCheck2, LuLogOu
 import { BarreNavigation, EcranAgent } from '../../components/agent/EcranAgent'
 import { ResumeMission } from '../../components/agent/CarteMission'
 import { Logo } from '../../components/Logo'
-import { useDemo } from '../../demo/DemoContexte'
-import { NOTIFICATIONS_AGENT } from '../../demo/donnees-demo'
+import { estPassee, propositionsOuvertes, useMesMissions, useNonLues } from '../../lib/espaceAgent'
 import { useAuth } from '../../auth/AuthContexte'
 import { GuideInstallation, estInstallee } from '../../components/agent/Installation'
-import { aujourdhuiIso } from '../../lib/dates'
 import { Lien, naviguer } from '../../lib/routeur'
 
 function Tuile({ vers, libelle, Icone, pastille, large }: { vers: string; libelle: string; Icone: IconType; pastille?: number; large?: boolean }) {
@@ -69,16 +67,15 @@ function Tiroir({ fermer }: { fermer: () => void }) {
 }
 
 export default function AccueilAgent() {
-  const { missions } = useDemo()
   const [menu, setMenu] = useState(false)
   const [guide, setGuide] = useState(false)
   const { profil } = useAuth()
+  const { missions: liste } = useMesMissions(profil?.id)
+  const missions = liste ?? []
+  const nonLues = useNonLues()
   const mobile = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
-  const propositions = missions.filter((m) => m.statut === 'proposee').length
-  const nonLues = NOTIFICATIONS_AGENT.filter((n) => !n.lue).length
-  const prochaine = missions
-    .filter((m) => m.statut === 'confirmee' && m.date >= aujourdhuiIso())
-    .sort((a, b) => a.date.localeCompare(b.date))[0]
+  const propositions = propositionsOuvertes(missions).length
+  const prochaine = missions.find((m) => m.statut === 'confirmee' && !m.mission_annulee && !estPassee(m))
 
   return (
     <EcranAgent>
