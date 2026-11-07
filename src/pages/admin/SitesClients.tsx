@@ -9,6 +9,8 @@ import {
   adresseComplete,
   enregistrerClient,
   enregistrerSite,
+  supprimerClient,
+  supprimerSite,
   lienItineraire,
   listerClients,
   listerSites,
@@ -55,7 +57,22 @@ function Erreur({ texte }: { texte: string | null }) {
   )
 }
 
-function Boutons({ modifiable, enCours, fermer, archiver, actif }: { modifiable: boolean; enCours: boolean; fermer: () => void; archiver?: () => void; actif?: boolean }) {
+function Boutons({
+  modifiable,
+  enCours,
+  fermer,
+  archiver,
+  actif,
+  supprimer,
+}: {
+  modifiable: boolean
+  enCours: boolean
+  fermer: () => void
+  archiver?: () => void
+  actif?: boolean
+  supprimer?: () => void
+}) {
+  const [confirmation, setConfirmation] = useState(false)
   if (!modifiable) {
     return (
       <div className="mt-4 flex justify-end">
@@ -68,9 +85,27 @@ function Boutons({ modifiable, enCours, fermer, archiver, actif }: { modifiable:
   return (
     <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
       {archiver ? (
-        <button type="button" onClick={archiver} className="rounded-xl px-3 py-2.5 text-sm font-semibold text-red-700">
-          {actif ? 'Archiver' : 'Réactiver'}
-        </button>
+        <div className="flex flex-wrap items-center gap-1">
+          <button type="button" onClick={archiver} className="rounded-xl px-3 py-2.5 text-sm font-semibold text-nuit-700">
+            {actif ? 'Archiver' : 'Réactiver'}
+          </button>
+          {supprimer &&
+            (confirmation ? (
+              <span className="flex items-center gap-1 rounded-xl bg-red-50 px-2 py-1">
+                <span className="text-[12px] text-red-800">Supprimer définitivement ?</span>
+                <button type="button" onClick={supprimer} className="rounded-lg bg-red-600 px-2.5 py-1.5 text-[12px] font-bold text-white">
+                  Oui
+                </button>
+                <button type="button" onClick={() => setConfirmation(false)} className="rounded-lg px-2 py-1.5 text-[12px] font-semibold text-nuit-700">
+                  Non
+                </button>
+              </span>
+            ) : (
+              <button type="button" onClick={() => setConfirmation(true)} className="rounded-xl px-3 py-2.5 text-sm font-semibold text-red-700">
+                Supprimer
+              </button>
+            ))}
+        </div>
       ) : (
         <span />
       )}
@@ -173,6 +208,17 @@ function FormulaireSite({
           fermer={fermer}
           actif={f.actif}
           archiver={nouveau ? undefined : () => sauver({ ...f, actif: !f.actif }, f.actif ? 'Site archivé' : 'Site réactivé')}
+          supprimer={
+            nouveau
+              ? undefined
+              : async () => {
+                  setEnCours(true)
+                  const err = await supprimerSite((site as Site).id)
+                  setEnCours(false)
+                  if (err) return setErreur(err)
+                  apres('Site supprimé')
+                }
+          }
         />
       </form>
     </Fenetre>
@@ -279,6 +325,17 @@ function FormulaireClient({
           fermer={fermer}
           actif={f.actif}
           archiver={nouveau ? undefined : () => sauver({ ...f, actif: !f.actif }, f.actif ? 'Client archivé' : 'Client réactivé')}
+          supprimer={
+            nouveau
+              ? undefined
+              : async () => {
+                  setEnCours(true)
+                  const err = await supprimerClient((client as Client).id)
+                  setEnCours(false)
+                  if (err) return setErreur(err)
+                  apres(sesSites.length ? 'Client et ses sites supprimés' : 'Client supprimé')
+                }
+          }
         />
       </form>
     </Fenetre>

@@ -108,3 +108,36 @@ export function adresseComplete(s: Pick<Site, 'adresse' | 'code_postal' | 'ville
 export function lienItineraire(s: Pick<Site, 'adresse' | 'code_postal' | 'ville'>): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresseComplete(s))}`
 }
+
+/** Supprime définitivement un site, s'il n'a aucune mission. Renvoie un message d'erreur ou null. */
+export async function supprimerSite(id: string): Promise<string | null> {
+  if (modeDemo) {
+    demoSites = demoSites.filter((s) => s.id !== id)
+    return null
+  }
+  const { count } = await supabase!.from('missions').select('id', { count: 'exact', head: true }).eq('site_id', id)
+  if ((count ?? 0) > 0) return 'Ce site a déjà des missions : archivez-le plutôt que de le supprimer.'
+  const { error } = await supabase!.from('sites').delete().eq('id', id)
+  if (error) return error.code === '23503' ? 'Ce site a déjà des missions : archivez-le plutôt que de le supprimer.' : 'Suppression impossible. Réessayez.'
+  return null
+}
+
+/** Supprime définitivement un client et ses sites, si aucun de ses sites n'a de mission. */
+export async function supprimerClient(id: string): Promise<string | null> {
+  if (modeDemo) {
+    demoSites = demoSites.filter((s) => s.client_id !== id)
+    demoClients = demoClients.filter((c) => c.id !== id)
+    return null
+  }
+  const { data: sesSites } = await supabase!.from('sites').select('id').eq('client_id', id)
+  const ids = (sesSites ?? []).map((s) => s.id)
+  if (ids.length) {
+    const { count } = await supabase!.from('missions').select('id', { count: 'exact', head: true }).in('site_id', ids)
+    if ((count ?? 0) > 0) return 'Un des sites de ce client a déjà des missions : archivez le client plutôt que de le supprimer.'
+    const { error: e1 } = await supabase!.from('sites').delete().eq('client_id', id)
+    if (e1) return 'Suppression des sites impossible. Réessayez.'
+  }
+  const { error } = await supabase!.from('clients').delete().eq('id', id)
+  if (error) return error.code === '23503' ? 'Ce client a encore des sites utilisés : archivez-le plutôt.' : 'Suppression impossible. Réessayez.'
+  return null
+}
