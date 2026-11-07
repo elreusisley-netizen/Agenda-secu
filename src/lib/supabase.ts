@@ -52,17 +52,29 @@ export async function gererComptes(corps: Record<string, unknown>): Promise<{ er
   const { data, error } = await supabase.functions.invoke('gerer-comptes', { body: corps })
   if (error) {
     // Les erreurs détaillées de la fonction sont dans le corps de la réponse.
+    const contexte = (error as { context?: Response }).context
+    let statut = ''
     try {
-      const contexte = (error as { context?: Response }).context
-      const detail = contexte ? await contexte.json() : null
+      statut = contexte?.status ? ` (code ${contexte.status})` : ''
+      const texte = contexte ? await contexte.text() : ''
+      let detail: { erreur?: string; message?: string; msg?: string; code?: string } | null = null
+      try {
+        detail = JSON.parse(texte)
+      } catch {
+        detail = null
+      }
       if (detail?.erreur) return { erreur: String(detail.erreur) }
+      if (contexte?.status === 404) return { erreur: 'Fonction « gerer-comptes » introuvable dans Supabase (code 404).' }
+      if (contexte?.status === 401) return { erreur: `Accès refusé par Supabase (code 401)${detail?.message ? ' : ' + detail.message : ''}.` }
+      const brut = detail?.message ?? detail?.msg ?? detail?.code ?? texte
+      if (brut) return { erreur: `Erreur du serveur${statut} : ${String(brut).slice(0, 160)}` }
     } catch {
       /* réponse illisible */
     }
     if (/failed to send|fetch|network/i.test(error.message)) {
       return { erreur: 'Service indisponible. Vérifiez que la fonction « gerer-comptes » est bien installée dans Supabase.' }
     }
-    return { erreur: 'L’opération a échoué. Réessayez.' }
+    return { erreur: `L’opération a échoué${statut}. Réessayez.` }
   }
   return { erreur: null, id: (data as { id?: string } | null)?.id }
 }
