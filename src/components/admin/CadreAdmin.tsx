@@ -56,9 +56,17 @@ function Menu({ actif, auClic }: { actif: RubriqueAdmin; auClic?: () => void }) 
   )
 }
 
-function MenuDeroulant({ ouvert, children }: { ouvert: boolean; children: ReactNode }) {
+/** Petit menu déroulant : pleine largeur sur téléphone, accroché au bouton sur grand écran. Se ferme en touchant à côté. */
+function MenuDeroulant({ ouvert, fermer, children }: { ouvert: boolean; fermer: () => void; children: ReactNode }) {
   if (!ouvert) return null
-  return <div className="absolute right-0 top-11 z-40 w-72 rounded-2xl border border-trait bg-white p-2 text-sm shadow-xl">{children}</div>
+  return (
+    <>
+      <button className="fixed inset-0 z-30 cursor-default" onClick={fermer} aria-label="Fermer" />
+      <div className="fixed inset-x-3 top-16 z-40 rounded-2xl border border-trait bg-white p-2 text-sm shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-11 sm:w-80">
+        {children}
+      </div>
+    </>
+  )
 }
 
 export function CadreAdmin({ actif, children }: { actif: RubriqueAdmin; children: ReactNode }) {
@@ -115,7 +123,7 @@ export function CadreAdmin({ actif, children }: { actif: RubriqueAdmin; children
                 <LuBell className="h-5 w-5" />
                 <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-red-600" />
               </button>
-              <MenuDeroulant ouvert={cloche}>
+              <MenuDeroulant ouvert={cloche} fermer={() => setCloche(false)}>
                 <p className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-nuit-600">Notifications (démo)</p>
                 {NOTIFICATIONS_ADMIN.map((n) => (
                   <div key={n.id} className="rounded-lg px-2 py-2 hover:bg-fond">
@@ -137,7 +145,7 @@ export function CadreAdmin({ actif, children }: { actif: RubriqueAdmin; children
                 {nomAffiche}
                 <LuChevronDown className="h-4 w-4" />
               </button>
-              <MenuDeroulant ouvert={compte}>
+              <MenuDeroulant ouvert={compte} fermer={() => setCompte(false)}>
                 {profil && (
                   <p className="px-3 py-2 text-xs text-nuit-600">
                     {profil.email} · {profil.role === 'admin' ? 'Administrateur' : 'Chef d’équipe'}
