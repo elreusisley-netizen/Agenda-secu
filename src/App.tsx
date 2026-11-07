@@ -18,6 +18,8 @@ import NouveauMotDePasse from './pages/agent/NouveauMotDePasse'
 import Notifications from './pages/agent/Notifications'
 import Profil from './pages/agent/Profil'
 import EcranAVenir from './pages/admin/EcranAVenir'
+import Agents from './pages/admin/Agents'
+import FicheAgent from './pages/admin/FicheAgent'
 import Parametres from './pages/admin/Parametres'
 import PlanningMissions from './pages/admin/PlanningMissions'
 import TableauDeBord from './pages/admin/TableauDeBord'
@@ -44,7 +46,9 @@ const ROUTES: { motif: string; acces: Acces; rubrique?: RubriqueAdmin; ecran: (p
   { motif: '/admin', acces: GESTION, rubrique: 'tableau', ecran: () => <TableauDeBord /> },
   { motif: '/admin/plannings', acces: GESTION, rubrique: 'plannings', ecran: () => <PlanningMissions /> },
   { motif: '/admin/parametres', acces: ['admin'], rubrique: 'parametres', ecran: () => <Parametres /> },
-  ...(['agents', 'missions', 'disponibilites', 'sites', 'rapports'] as RubriqueAdmin[]).map((r) => ({
+  { motif: '/admin/agents', acces: GESTION, rubrique: 'agents', ecran: () => <Agents /> },
+  { motif: '/admin/agents/:id', acces: GESTION, rubrique: 'agents', ecran: (p) => <FicheAgent id={p.id} /> },
+  ...(['missions', 'disponibilites', 'sites', 'rapports'] as RubriqueAdmin[]).map((r) => ({
     motif: `/admin/${r}`,
     acces: GESTION as Acces,
     rubrique: r,
