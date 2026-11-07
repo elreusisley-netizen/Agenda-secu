@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { LuCheck, LuChevronLeft, LuChevronRight, LuClock, LuPlus, LuSearch } from 'react-icons/lu'
+import { LuCheck, LuChevronLeft, LuChevronRight, LuClock, LuFileSpreadsheet, LuPlus, LuSearch } from 'react-icons/lu'
+import { ImportExcel } from '../../components/admin/ImportExcel'
 import { CadreAdmin } from '../../components/admin/CadreAdmin'
 import { BandeauPlanning, DetailMission, FormulaireMission, memoriserMois, moisCourant, useDroitsMissions, useEstPetit, usePeriode } from '../../components/admin/missions'
 import { MOIS_COURTS, ajouterJours, aujourdhuiIso, joursDuMois, semaineDe, titreMois, versDate, versIso } from '../../lib/dates'
@@ -20,11 +21,24 @@ const PALETTE = [
   { fond: '#9333ea', clair: '#faf5ff', texte: '#ffffff' }, // violet
   { fond: '#ea580c', clair: '#fff7ed', texte: '#ffffff' }, // orange
 ]
-function couleurDe(id: string) {
+function hachage(id: string) {
   let h = 0
   for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0
-  return PALETTE[h % PALETTE.length]
+  return h % PALETTE.length
 }
+// Couleurs des sites affichés : chacun garde « sa » couleur, sauf si elle est déjà prise par un autre site visible.
+let attribution = new Map<string, number>()
+function attribuerCouleurs(ids: string[]) {
+  const pris = new Set<number>()
+  attribution = new Map()
+  for (const id of [...new Set(ids)].sort()) {
+    let i = hachage(id)
+    for (let k = 0; k < PALETTE.length && pris.has(i); k++) i = (i + 1) % PALETTE.length
+    pris.add(i)
+    attribution.set(id, i)
+  }
+}
+const couleurDe = (id: string) => PALETTE[attribution.get(id) ?? hachage(id)]
 const TEINTES_AVATAR = ['#1e293b', '#334155', '#4338ca', '#0f766e', '#b45309', '#be123c', '#6d28d9', '#0369a1']
 const initiales = (a: AgentCourt) => ((a.prenom?.[0] ?? '') + (a.nom?.[0] ?? '')).toUpperCase() || '?'
 
@@ -119,6 +133,7 @@ export default function PlanningMissions() {
   const [recherche, setRecherche] = useState('')
   const [ouverte, setOuverte] = useState<string | null>(null)
   const [formulaire, setFormulaire] = useState<'creer' | 'modifier' | null>(null)
+  const [importOuvert, setImport] = useState(false)
 
   const d = versDate(ancre)
   const jours = vue === 'semaine' ? semaineDe(ancre) : joursDuMois(d.getFullYear(), d.getMonth())
@@ -158,6 +173,7 @@ export default function PlanningMissions() {
       .reduce((t, m) => t + (new Date(m.fin).getTime() - new Date(m.debut).getTime()) / 36e5, 0)
   const manquantes = (jour: string) => missions.filter((m) => m.date === jour && nbConfirmes(m) < m.nb_agents_requis)
   const sites = [...new Map(missions.map((m) => [m.site_id, m.site_nom])).entries()]
+  attribuerCouleurs(sites.map(([id]) => id))
 
   const fin = versDate(jours[jours.length - 1])
   const libelle =
@@ -175,9 +191,14 @@ export default function PlanningMissions() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-[22px] font-bold text-nuit-900">Planning</h1>
         {admin && (
-          <button onClick={() => setFormulaire('creer')} className="flex items-center gap-1.5 rounded-lg bg-or-500 px-3.5 py-2 text-[13px] font-bold text-nuit-900 shadow-sm active:bg-or-600">
-            <LuPlus className="h-4 w-4" /> Créer une mission
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setImport(true)} className="flex items-center gap-1.5 rounded-lg border border-trait bg-white px-3.5 py-2 text-[13px] font-bold text-nuit-900 shadow-sm active:bg-fond">
+              <LuFileSpreadsheet className="h-4 w-4 text-dispo-fonce" /> Importer Excel
+            </button>
+            <button onClick={() => setFormulaire('creer')} className="flex items-center gap-1.5 rounded-lg bg-or-500 px-3.5 py-2 text-[13px] font-bold text-nuit-900 shadow-sm active:bg-or-600">
+              <LuPlus className="h-4 w-4" /> Créer une mission
+            </button>
+          </div>
         )}
       </div>
 
@@ -314,6 +335,20 @@ export default function PlanningMissions() {
             </span>
           </div>
 
+          {importOuvert && (
+            <ImportExcel
+              agents={donnees.agents}
+              fermer={() => {
+                setImport(false)
+                void recharger()
+              }}
+              apres={(date) => {
+                setImport(false)
+                if (jours.includes(date)) void recharger()
+                else setAncre(date)
+              }}
+            />
+          )}
           {mission && formulaire !== 'modifier' && (
             <DetailMission mission={mission} donnees={donnees} fermer={() => setOuverte(null)} recharger={recharger} modifier={() => setFormulaire('modifier')} />
           )}
