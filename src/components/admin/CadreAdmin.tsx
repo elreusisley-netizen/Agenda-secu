@@ -80,7 +80,7 @@ export function CadreAdmin({ actif, children }: { actif: RubriqueAdmin; children
   const nomAffiche = profil?.role === 'chef' ? profil.prenom || 'Chef' : profil?.prenom || 'Admin'
 
   return (
-    <div className="flex min-h-dvh bg-white">
+    <div className="flex min-h-dvh overflow-x-clip bg-white">
       {/* Menu latéral (ordinateur et tablette) */}
       <aside className="sticky top-0 hidden h-dvh w-[232px] shrink-0 flex-col bg-nuit-900 px-4 py-6 lg:flex">
         <div className="mb-8 px-2">
@@ -113,7 +113,7 @@ export function CadreAdmin({ actif, children }: { actif: RubriqueAdmin; children
           <span className="lg:hidden">
             <Logo taille="petit" clair={false} />
           </span>
-          <div className="ml-auto flex items-center gap-5 lg:ml-0">
+          <div className="ml-auto flex shrink-0 items-center gap-4 lg:ml-0">
             <div className="relative">
               <button
                 onClick={() => {
@@ -144,8 +144,8 @@ export function CadreAdmin({ actif, children }: { actif: RubriqueAdmin; children
                 }}
                 className="flex items-center gap-2 text-[13px] font-semibold text-nuit-900"
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-nuit-700 text-xs font-bold text-white">{nomAffiche[0]?.toUpperCase()}</span>
-                {nomAffiche}
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-nuit-700 text-xs font-bold text-white">{nomAffiche[0]?.toUpperCase()}</span>
+                <span className="hidden max-w-[9rem] truncate sm:inline">{nomAffiche}</span>
                 <LuChevronDown className="h-4 w-4" />
               </button>
               <MenuDeroulant ouvert={compte} fermer={() => setCompte(false)}>
