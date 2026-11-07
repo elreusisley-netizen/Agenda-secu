@@ -46,6 +46,11 @@ export function useDroitsMissions() {
 const maintenant = new Date()
 let moisMemorise: [number, number] = [maintenant.getFullYear(), maintenant.getMonth()]
 
+export const moisCourant = () => moisMemorise
+export function memoriserMois(a: number, m: number) {
+  moisMemorise = [a, m]
+}
+
 export function useMois() {
   const [[annee, mois], setAm] = useState<[number, number]>(moisMemorise)
   const [donnees, setDonnees] = useState<DonneesMois | null>(null)
