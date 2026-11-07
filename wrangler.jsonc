@@ -1,0 +1,10 @@
+// Réglages de mise en ligne sur Cloudflare (Workers, fichiers statiques).
+// Cloudflare construit l'application (npm run build) puis publie le dossier « dist ».
+{
+  "name": "agenda-secu",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
