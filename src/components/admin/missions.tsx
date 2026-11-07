@@ -612,7 +612,7 @@ export function BandeauPlanning({ planning, missions, recharger }: { planning: P
           </span>
         )}
       </div>
-      {!publie && <p className="mt-1.5 text-[12px] text-nuit-600">Les agents reçoivent déjà les propositions. La publication les prévient que leur planning du mois est prêt.</p>}
+      {!publie && <p className="mt-1.5 hidden text-[12px] text-nuit-600 sm:block">Les agents reçoivent déjà les propositions. La publication les prévient que leur planning du mois est prêt.</p>}
       <Alerte texte={erreur} />
     </div>
   )

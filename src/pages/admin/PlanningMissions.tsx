@@ -28,6 +28,19 @@ function couleurDe(id: string) {
 const TEINTES_AVATAR = ['#1e293b', '#334155', '#4338ca', '#0f766e', '#b45309', '#be123c', '#6d28d9', '#0369a1']
 const initiales = (a: AgentCourt) => ((a.prenom?.[0] ?? '') + (a.nom?.[0] ?? '')).toUpperCase() || '?'
 
+/** Vrai sur téléphone (écran étroit). */
+function useEstPetit() {
+  const requete = '(max-width: 639px)'
+  const [petit, setPetit] = useState(() => typeof window !== 'undefined' && window.matchMedia(requete).matches)
+  useEffect(() => {
+    const mq = window.matchMedia(requete)
+    const maj = () => setPetit(mq.matches)
+    mq.addEventListener('change', maj)
+    return () => mq.removeEventListener('change', maj)
+  }, [])
+  return petit
+}
+
 // ---------- Données d'une période (une semaine peut couvrir deux mois) ----------
 function usePeriode(mois: string[]) {
   const cle = mois.join(',')
@@ -62,7 +75,9 @@ function usePeriode(mois: string[]) {
 }
 
 // ---------- Blocs ----------
-function Bloc({ m, statut, compact, ouvrir }: { m: Mission; statut: StatutAffectation; compact?: boolean; ouvrir: () => void }) {
+const heureCourte = (h: string) => (h.endsWith(':00') ? String(Number(h.slice(0, 2))) + 'h' : h.replace(':', 'h'))
+
+function Bloc({ m, statut, compact, mini, ouvrir }: { m: Mission; statut: StatutAffectation; compact?: boolean; mini?: boolean; ouvrir: () => void }) {
   const c = couleurDe(m.site_id)
   const confirme = statut === 'confirmee'
   const style: CSSProperties = confirme
@@ -71,6 +86,17 @@ function Bloc({ m, statut, compact, ouvrir }: { m: Mission; statut: StatutAffect
   const libelle = statut === 'confirmee' ? 'Confirmée' : statut === 'acceptee' ? 'Acceptée — à confirmer' : 'Proposée — en attente'
   const Icone = confirme ? LuCheck : LuClock
 
+  if (mini) {
+    return (
+      <button onClick={ouvrir} title={`${m.site_nom} · ${m.hDebut}–${m.hFin} · ${libelle}`} style={style} className="relative block w-full rounded-md border px-0.5 py-1 text-center text-[10px] font-bold leading-[1.15]">
+        {heureCourte(m.hDebut)}
+        <br />
+        {heureCourte(m.hFin)}
+        <span className="mt-0.5 block truncate text-[8px] font-semibold uppercase opacity-90">{m.site_nom}</span>
+        {!confirme && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full ring-1 ring-white" style={{ background: statut === 'acceptee' ? '#f59e0b' : '#94a3b8' }} />}
+      </button>
+    )
+  }
   if (compact) {
     return (
       <button onClick={ouvrir} title={`${m.site_nom} · ${m.hDebut}–${m.hFin} · ${libelle}`} style={style} className="block w-full truncate rounded border px-1 py-0.5 text-left text-[10px] font-bold leading-tight">
@@ -94,7 +120,15 @@ function Bloc({ m, statut, compact, ouvrir }: { m: Mission; statut: StatutAffect
   )
 }
 
-function BlocManquant({ m, manque, compact, ouvrir }: { m: Mission; manque: number; compact?: boolean; ouvrir: () => void }) {
+function BlocManquant({ m, manque, compact, mini, ouvrir }: { m: Mission; manque: number; compact?: boolean; mini?: boolean; ouvrir: () => void }) {
+  if (mini) {
+    return (
+      <button onClick={ouvrir} title={`${m.site_nom} — ${manque} agent(s) manquant(s)`} className="block w-full rounded-md border-2 border-dashed border-or-500 bg-white px-0.5 py-1 text-center text-[10px] font-bold leading-[1.15] text-nuit-900">
+        {heureCourte(m.hDebut)}
+        <span className="block text-red-600">−{manque}</span>
+      </button>
+    )
+  }
   return (
     <button
       onClick={ouvrir}
@@ -116,92 +150,6 @@ function BlocManquant({ m, manque, compact, ouvrir }: { m: Mission; manque: numb
       )}
     </button>
   )
-}
-
-// ---------- Vue téléphone : la semaine jour par jour ----------
-function ListeSemaine({
-  jours,
-  missions,
-  agents,
-  ajd,
-  ouvrir,
-}: {
-  jours: string[]
-  missions: Mission[]
-  agents: AgentCourt[]
-  ajd: string
-  ouvrir: (id: string) => void
-}) {
-  const index = new Map(agents.map((a, i) => [a.id, { a, i }]))
-  return (
-    <div className="space-y-4">
-      {jours.map((j) => {
-        const dj = versDate(j)
-        const duJour = missions.filter((m) => m.date === j)
-        const manquantes = duJour.filter((m) => nbConfirmes(m) < m.nb_agents_requis)
-        const vacations = duJour
-          .flatMap((m) => m.affectations.filter((x) => ACTIVES.includes(x.statut) && index.has(x.agent_id)).map((x) => ({ m, x })))
-          .sort((p, q) => p.m.debut.localeCompare(q.m.debut))
-        return (
-          <section key={j}>
-            <h2 className="mb-2 flex items-center gap-2">
-              <span className={`flex h-9 w-9 items-center justify-center rounded-full text-[15px] font-bold ${j === ajd ? 'bg-or-500 text-nuit-900' : 'bg-fond text-nuit-900'}`}>{dj.getDate()}</span>
-              <span className="text-[14px] font-bold text-nuit-900">
-                {['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'][dj.getDay()]}
-                <span className="font-normal text-nuit-600"> · {MOIS_COURTS[dj.getMonth()]}</span>
-              </span>
-              {j === ajd && <span className="rounded-full bg-or-300/50 px-2 py-0.5 text-[11px] font-semibold text-nuit-900">Aujourd’hui</span>}
-            </h2>
-            {vacations.length === 0 && manquantes.length === 0 && <p className="rounded-xl border border-dashed border-trait px-3 py-2.5 text-[13px] text-nuit-600">Aucune vacation</p>}
-            <div className="space-y-2">
-              {manquantes.map((m) => (
-                <button key={m.id} onClick={() => ouvrir(m.id)} className="flex w-full items-center gap-3 rounded-xl border-2 border-dashed border-or-500 bg-[#fffbeb] px-3 py-2.5 text-left">
-                  <span className="w-[86px] shrink-0 text-[13px] font-bold text-nuit-900">
-                    {m.hDebut}–{m.hFin}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[14px] font-semibold text-nuit-900">{m.site_nom}</span>
-                    <span className="block text-[12px] font-bold text-red-600">
-                      {m.nb_agents_requis - nbConfirmes(m)} agent{m.nb_agents_requis - nbConfirmes(m) > 1 ? 's' : ''} manquant{m.nb_agents_requis - nbConfirmes(m) > 1 ? 's' : ''}
-                    </span>
-                  </span>
-                </button>
-              ))}
-              {vacations.map(({ m, x }) => {
-                const { a, i } = index.get(x.agent_id)!
-                const c = couleurDe(m.site_id)
-                return (
-                  <button
-                    key={x.id}
-                    onClick={() => ouvrir(m.id)}
-                    className={`flex w-full items-center gap-3 overflow-hidden rounded-xl border bg-white py-2.5 pl-0 pr-3 text-left shadow-sm ${x.statut === 'proposee' ? 'border-dashed border-nuit-600/40' : 'border-trait'}`}
-                  >
-                    <span className="h-11 w-1.5 shrink-0 rounded-r" style={{ background: c.fond }} />
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white" style={{ background: TEINTES_AVATAR[i % TEINTES_AVATAR.length] }}>
-                      {initiales(a)}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[14px] font-semibold text-nuit-900">{nomAgent(a)}</span>
-                      <span className="block truncate text-[12px] text-nuit-700">
-                        {m.hDebut}–{m.hFin} · {m.site_nom}
-                      </span>
-                    </span>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUT_PUCE[x.statut]}`}>{STATUT_COURT[x.statut]}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </section>
-        )
-      })}
-    </div>
-  )
-}
-const STATUT_COURT: Partial<Record<StatutAffectation, string>> = { confirmee: 'Confirmée', acceptee: 'À confirmer', proposee: 'Proposée' }
-const STATUT_PUCE: Partial<Record<StatutAffectation, string>> = {
-  confirmee: 'bg-confirme-fond text-confirme-texte',
-  acceptee: 'bg-attente/40 text-attente-fonce',
-  proposee: 'bg-creneau-bleu text-creneau-bleu-texte',
 }
 
 // ---------- Écran ----------
@@ -262,8 +210,11 @@ export default function PlanningMissions() {
     vue === 'semaine'
       ? `${versDate(jours[0]).getDate()} ${MOIS_COURTS[versDate(jours[0]).getMonth()]} – ${fin.getDate()} ${MOIS_COURTS[fin.getMonth()]} ${fin.getFullYear()}`
       : titreMois(d.getFullYear(), d.getMonth())
+  const petit = useEstPetit()
   const compact = vue === 'mois'
-  const colonne = compact ? 'w-[58px] min-w-[58px]' : 'w-[112px] min-w-[112px]'
+  const mini = petit && vue === 'semaine' // téléphone : toute la semaine tient dans l'écran
+  const largeurNoms = mini ? 62 : petit ? 96 : 170
+  const colonne = mini ? '' : compact ? 'w-[58px] min-w-[58px]' : 'w-[112px] min-w-[112px]'
 
   return (
     <CadreAdmin actif="plannings">
@@ -312,24 +263,19 @@ export default function PlanningMissions() {
         <>
           <BandeauPlanning planning={planningRef} missions={missionsRef} recharger={recharger} />
 
-          {vue === 'semaine' && (
-            <div className="sm:hidden">
-              <ListeSemaine jours={jours} missions={missions} agents={lignes} ajd={ajd} ouvrir={setOuverte} />
-            </div>
-          )}
-          <div className={`overflow-x-auto rounded-2xl border border-trait bg-white shadow-sm ${vue === 'semaine' ? 'hidden sm:block' : ''}`}>
-            <table className="table-fixed border-collapse" style={{ width: `max(100%, ${170 + jours.length * (compact ? 58 : 112)}px)` }}>
+          <div className={`overflow-x-auto border border-trait bg-white shadow-sm ${mini ? '-mx-2 rounded-xl' : 'rounded-2xl'}`}>
+            <table className="table-fixed border-collapse" style={{ width: mini ? '100%' : `max(100%, ${largeurNoms + jours.length * (compact ? 58 : 112)}px)` }}>
               <thead>
                 <tr className="bg-fond/60">
-                  <th className="sticky left-0 z-20 w-[118px] min-w-[118px] border-b border-r border-trait bg-[#f8fafc] sm:w-[170px] sm:min-w-[170px]" />
+                  <th className="sticky left-0 z-20 border-b border-r border-trait bg-[#f8fafc]" style={{ width: largeurNoms, minWidth: largeurNoms }} />
                   {jours.map((j) => {
                     const dj = versDate(j)
                     const estAjd = j === ajd
                     const weekend = dj.getDay() === 0 || dj.getDay() === 6
                     return (
-                      <th key={j} className={`${colonne} border-b border-r border-trait px-1 py-2 text-center ${weekend ? 'bg-slate-100/70' : ''}`}>
-                        <span className="block text-[10px] font-semibold tracking-wider text-nuit-600">{JOURS[dj.getDay()]}</span>
-                        <span className={`mx-auto mt-0.5 flex h-7 w-7 items-center justify-center rounded-full font-bold ${compact ? 'text-[12px]' : 'text-[16px]'} ${estAjd ? 'bg-or-500 text-nuit-900' : 'text-nuit-900'}`}>
+                      <th key={j} className={`${colonne} border-b border-r border-trait ${mini ? 'px-0 py-1.5' : 'px-1 py-2'} text-center ${weekend ? 'bg-slate-100/70' : ''}`}>
+                        <span className={`block font-semibold text-nuit-600 ${mini ? 'text-[9px]' : 'text-[10px] tracking-wider'}`}>{JOURS[dj.getDay()]}</span>
+                        <span className={`mx-auto mt-0.5 flex items-center justify-center rounded-full font-bold ${mini ? 'h-6 w-6 text-[12px]' : compact ? 'h-7 w-7 text-[12px]' : 'h-7 w-7 text-[16px]'} ${estAjd ? 'bg-or-500 text-nuit-900' : 'text-nuit-900'}`}>
                           {dj.getDate()}
                         </span>
                       </th>
@@ -340,15 +286,15 @@ export default function PlanningMissions() {
               <tbody>
                 {missions.some((m) => nbConfirmes(m) < m.nb_agents_requis) && (
                   <tr>
-                    <td className="sticky left-0 z-10 border-b border-r border-trait bg-[#fffbeb] px-3 py-2">
-                      <span className="block text-[13px] font-bold text-nuit-900">À pourvoir</span>
+                    <td className={`sticky left-0 z-10 border-b border-r border-trait bg-[#fffbeb] ${mini ? 'px-1 py-1.5' : 'px-3 py-2'}`}>
+                      <span className={`block font-bold leading-tight text-nuit-900 ${mini ? 'text-[10px]' : 'text-[13px]'}`}>À pourvoir</span>
                       <span className="hidden text-[11px] text-nuit-600 sm:block">Missions incomplètes</span>
                     </td>
                     {jours.map((j) => (
-                      <td key={j} className="border-b border-r border-trait bg-[#fffbeb]/60 p-1 align-top">
+                      <td key={j} className={`border-b border-r border-trait bg-[#fffbeb]/60 align-top ${mini ? 'p-0.5' : 'p-1'}`}>
                         <div className="space-y-1">
                           {manquantes(j).map((m) => (
-                            <BlocManquant key={m.id} m={m} manque={m.nb_agents_requis - nbConfirmes(m)} compact={compact} ouvrir={() => setOuverte(m.id)} />
+                            <BlocManquant key={m.id} m={m} manque={m.nb_agents_requis - nbConfirmes(m)} compact={compact} mini={mini} ouvrir={() => setOuverte(m.id)} />
                           ))}
                         </div>
                       </td>
@@ -359,27 +305,24 @@ export default function PlanningMissions() {
                   const h = heuresSemaine(a.id)
                   return (
                     <tr key={a.id} className="group">
-                      <td className="sticky left-0 z-10 border-b border-r border-trait bg-white px-2 py-2 sm:px-3">
-                        <span className="flex items-center gap-2">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ background: TEINTES_AVATAR[i % TEINTES_AVATAR.length] }}>
+                      <td className={`sticky left-0 z-10 border-b border-r border-trait bg-white ${mini ? 'px-1 py-1.5' : 'px-2 py-2 sm:px-3'}`}>
+                        <span className={`flex items-center ${mini ? 'flex-col gap-0.5 text-center' : 'gap-2'}`}>
+                          <span className={`flex shrink-0 items-center justify-center rounded-full font-bold text-white ${mini ? 'h-7 w-7 text-[10px]' : 'h-8 w-8 text-[11px]'}`} style={{ background: TEINTES_AVATAR[i % TEINTES_AVATAR.length] }}>
                             {initiales(a)}
                           </span>
-                          <span className="min-w-0">
-                            <span className="block truncate text-[13px] font-semibold leading-tight text-nuit-900">
-                              <span className="sm:hidden">{a.prenom || a.nom}</span>
-                              <span className="hidden sm:inline">{nomAgent(a)}</span>
-                            </span>
-                            {h > 0 && <span className="block text-[11px] text-nuit-600">{Math.round(h * 10) / 10} h</span>}
+                          <span className={`min-w-0 ${mini ? 'w-full' : ''}`}>
+                            <span className={`block truncate font-semibold leading-tight text-nuit-900 ${mini ? 'text-[10px]' : 'text-[13px]'}`}>{petit ? a.prenom || a.nom : nomAgent(a)}</span>
+                            {h > 0 && <span className={`block text-nuit-600 ${mini ? 'text-[9px]' : 'text-[11px]'}`}>{Math.round(h * 10) / 10} h</span>}
                           </span>
                         </span>
                       </td>
                       {jours.map((j) => {
                         const weekend = [0, 6].includes(versDate(j).getDay())
                         return (
-                          <td key={j} className={`h-[64px] border-b border-r border-trait p-1 align-top ${weekend ? 'bg-slate-50' : ''}`}>
-                            <div className="space-y-1">
+                          <td key={j} className={`border-b border-r border-trait align-top ${mini ? 'h-[58px] p-0.5' : 'h-[64px] p-1'} ${weekend ? 'bg-slate-50' : ''}`}>
+                            <div className={mini ? 'space-y-0.5' : 'space-y-1'}>
                               {blocsDe(a.id, j).map(({ m, x }) => (
-                                <Bloc key={x.id} m={m} statut={x.statut} compact={compact} ouvrir={() => setOuverte(m.id)} />
+                                <Bloc key={x.id} m={m} statut={x.statut} compact={compact} mini={mini} ouvrir={() => setOuverte(m.id)} />
                               ))}
                             </div>
                           </td>
