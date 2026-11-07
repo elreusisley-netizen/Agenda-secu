@@ -74,7 +74,7 @@ export default function Connexion() {
       <div className="relative mx-auto flex min-h-dvh max-w-[430px] flex-col overflow-hidden bg-nuit-900 md:min-h-[calc(100dvh-4rem)] md:rounded-[2.25rem] md:shadow-2xl md:ring-1 md:ring-white/10">
         <div className="relative h-[58dvh] min-h-[380px] max-h-[520px]">
           <IllustrationAgent />
-          <div className="pt-securite relative flex justify-center pt-12">
+          <div className="relative flex justify-center pt-[calc(env(safe-area-inset-top)+2.5rem)]">
             <span className="inline-flex items-center gap-2.5">
               <Coche className="h-10 w-12" />
               <span className="text-[30px] font-bold tracking-tight text-white">AGENDA SECU</span>
