@@ -337,6 +337,11 @@ export function FormulaireMission({
           <input type="time" required value={s.hFin} onChange={(e) => maj({ hFin: e.target.value })} className={CHAMP} />
         </label>
         {nuit && <p className="col-span-2 -mt-1 text-[12px] font-normal text-nuit-600">Vacation de nuit : la fin est le lendemain matin.</p>}
+        {cible && new Date(cible.fin).getTime() < Date.now() && (
+          <p className="col-span-2 -mt-1 rounded-lg bg-attente/30 p-2 text-[12px] font-normal text-attente-fonce">
+            Cette mission est déjà terminée : les agents ne pourront pas y répondre (vous pouvez confirmer vous-même).
+          </p>
+        )}
         <label className="col-span-2">
           Consignes
           <textarea rows={2} value={s.consignes} onChange={(e) => maj({ consignes: e.target.value })} className={CHAMP} placeholder="Facultatif : tenue, rondes, contact sur place…" />

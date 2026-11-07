@@ -93,6 +93,9 @@ export default function MissionDetail({ id }: { id: string }) {
           )}
         </div>
         {mission.statut === 'proposee' && !mission.mission_annulee && !estPassee(mission) && <BoutonsReponse mission={mission} apres={recharger} grand />}
+        {mission.statut === 'proposee' && !mission.mission_annulee && estPassee(mission) && (
+          <p className="mt-4 rounded-xl bg-fond p-3 text-[13px] text-nuit-700">Cette mission est déjà terminée : il n’est plus possible d’y répondre.</p>
+        )}
         {mission.statut === 'acceptee' && <p className="mt-4 rounded-xl bg-fond p-3 text-[13px] text-nuit-700">Vous avez accepté cette mission. Vous serez prévenu dès qu’elle sera confirmée.</p>}
       </Feuille>
       <BarreNavigation actif="missions" />
