@@ -84,17 +84,20 @@ Deno.serve(async (req) => {
         const { data, error } = await serveur.auth.admin.inviteUserByEmail(email, { data: { prenom, nom }, redirectTo })
         if (error || !data.user) return reponse({ erreur: traduire(error?.message ?? '') }, 400)
         id = data.user.id
-        // L'invitation crée d'abord un agent : on corrige le rôle si c'est un chef.
-        if (role === 'chef') {
-          await serveur.auth.admin.updateUserById(id, { app_metadata: { role } })
-          const { error: e } = await serveur.from('profils').update({ role: 'chef' }).eq('id', id)
-          if (e) {
-            await serveur.auth.admin.deleteUser(id)
-            return reponse({ erreur: traduire(e.message) }, 400)
-          }
-          await serveur.from('agents').delete().eq('profil_id', id)
-          await serveur.from('permissions_chefs').upsert({ chef_id: id })
-        }
+        await serveur.auth.admin.updateUserById(id, { app_metadata: { role } })
+      }
+
+      // Le profil est créé automatiquement en « agent » : on fixe toujours le bon rôle et le nom.
+      const { error: e } = await serveur.from('profils').update({ role, prenom, nom }).eq('id', id)
+      if (e) {
+        await serveur.auth.admin.deleteUser(id)
+        return reponse({ erreur: traduire(e.message) }, 400)
+      }
+      if (role === 'chef') {
+        await serveur.from('agents').delete().eq('profil_id', id)
+        await serveur.from('permissions_chefs').upsert({ chef_id: id }, { onConflict: 'chef_id', ignoreDuplicates: true })
+      } else {
+        await serveur.from('agents').upsert({ profil_id: id }, { onConflict: 'profil_id', ignoreDuplicates: true })
       }
       return reponse({ ok: true, id })
     }
