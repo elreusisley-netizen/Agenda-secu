@@ -24,6 +24,7 @@ import Parametres from './pages/admin/Parametres'
 import SitesClients from './pages/admin/SitesClients'
 import PlanningMissions from './pages/admin/PlanningMissions'
 import MissionsAdmin from './pages/admin/Missions'
+import DisponibilitesEquipe from './pages/admin/DisponibilitesEquipe'
 import TableauDeBord from './pages/admin/TableauDeBord'
 
 /*
@@ -47,12 +48,13 @@ const ROUTES: { motif: string; acces: Acces; rubrique?: RubriqueAdmin; ecran: (p
   { motif: '/agent/notifications', acces: AGENT, ecran: () => <Notifications /> },
   { motif: '/admin', acces: GESTION, rubrique: 'tableau', ecran: () => <TableauDeBord /> },
   { motif: '/admin/missions', acces: GESTION, rubrique: 'missions', ecran: () => <MissionsAdmin /> },
+  { motif: '/admin/disponibilites', acces: GESTION, rubrique: 'disponibilites', ecran: () => <DisponibilitesEquipe /> },
   { motif: '/admin/plannings', acces: GESTION, rubrique: 'plannings', ecran: () => <PlanningMissions /> },
   { motif: '/admin/parametres', acces: ['admin'], rubrique: 'parametres', ecran: () => <Parametres /> },
   { motif: '/admin/agents', acces: GESTION, rubrique: 'agents', ecran: () => <Agents /> },
   { motif: '/admin/agents/:id', acces: GESTION, rubrique: 'agents', ecran: (p) => <FicheAgent id={p.id} /> },
   { motif: '/admin/sites', acces: GESTION, rubrique: 'sites', ecran: () => <SitesClients /> },
-  ...(['disponibilites', 'rapports'] as RubriqueAdmin[]).map((r) => ({
+  ...(['rapports'] as RubriqueAdmin[]).map((r) => ({
     motif: `/admin/${r}`,
     acces: GESTION as Acces,
     rubrique: r,
@@ -105,7 +107,7 @@ export default function App() {
     <>
       {route.ecran(params)}
       <MessageFlash />
-      {profil && (modeDemo || chemin === '/agent/disponibilites') && <BadgeDemo />}
+      {profil && modeDemo && <BadgeDemo />}
     </>
   )
 }

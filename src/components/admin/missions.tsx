@@ -619,3 +619,50 @@ export function BandeauPlanning({ planning, missions, recharger }: { planning: P
 }
 
 export const actives = (m: Mission) => m.affectations.filter((a) => ACTIVES.includes(a.statut))
+
+/** Vrai sur téléphone (écran étroit). */
+export function useEstPetit() {
+  const requete = '(max-width: 639px)'
+  const [petit, setPetit] = useState(() => typeof window !== 'undefined' && window.matchMedia(requete).matches)
+  useEffect(() => {
+    const mq = window.matchMedia(requete)
+    const maj = () => setPetit(mq.matches)
+    mq.addEventListener('change', maj)
+    return () => mq.removeEventListener('change', maj)
+  }, [])
+  return petit
+}
+
+// ---------- Données d'une période (une semaine peut couvrir deux mois) ----------
+export function usePeriode(mois: string[]) {
+  const cle = mois.join(',')
+  const [donnees, setDonnees] = useState<(DonneesMois & { plannings: Planning[] }) | null>(null)
+  const [erreur, setErreur] = useState<string | null>(null)
+
+  const recharger = useCallback(async () => {
+    try {
+      const parts = await Promise.all(
+        cle.split(',').map((m) => {
+          const [a, mm] = m.split('-').map(Number)
+          return chargerMois(a, mm - 1)
+        }),
+      )
+      setDonnees({
+        planning: parts[0].planning,
+        plannings: parts.map((p) => p.planning).filter((p): p is Planning => !!p),
+        missions: parts.flatMap((p) => p.missions),
+        agents: parts[0].agents,
+        dispos: Object.assign({}, ...parts.map((p) => p.dispos)),
+      })
+      setErreur(null)
+    } catch {
+      setErreur('Impossible de charger le planning. Vérifiez votre connexion puis réessayez.')
+    }
+  }, [cle])
+
+  useEffect(() => {
+    void recharger()
+  }, [recharger])
+  return { donnees, erreur, recharger }
+}
+
