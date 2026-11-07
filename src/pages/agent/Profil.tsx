@@ -3,6 +3,7 @@ import { LuChevronRight, LuLogOut, LuMail, LuPhone, LuSmartphone } from 'react-i
 import { BarreNavigation, EcranAgent, EnteteAgent, Feuille } from '../../components/agent/EcranAgent'
 import { GuideInstallation, estInstallee } from '../../components/agent/Installation'
 import { useAuth } from '../../auth/AuthContexte'
+import { CartePush } from '../../components/CartePush'
 import { naviguer } from '../../lib/routeur'
 
 export default function Profil() {
@@ -39,9 +40,9 @@ export default function Profil() {
             <LuChevronRight className="h-5 w-5" />
           </button>
         )}
-        <p className="mt-4 px-1 text-xs text-nuit-600">
-          Réglages des notifications et historique personnel : bientôt disponibles.
-        </p>
+        <div className="mt-3">
+          <CartePush />
+        </div>
         <button
           onClick={async () => {
             await deconnexion()

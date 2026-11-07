@@ -6,6 +6,7 @@ import { ResumeMission } from '../../components/agent/CarteMission'
 import { Logo } from '../../components/Logo'
 import { estPassee, propositionsOuvertes, useMesMissions, useNonLues } from '../../lib/espaceAgent'
 import { useAuth } from '../../auth/AuthContexte'
+import { CartePush } from '../../components/CartePush'
 import { GuideInstallation, estInstallee } from '../../components/agent/Installation'
 import { Lien, naviguer } from '../../lib/routeur'
 
@@ -110,6 +111,9 @@ export default function AccueilAgent() {
             </span>
           </button>
         )}
+        <div className="mb-4 empty:hidden [&>div]:bg-white">
+          <CartePush seulementSiInactif />
+        </div>
         <h2 className="mb-3 px-1 text-[17px] font-bold text-nuit-900">Prochaine mission</h2>
         {prochaine ? (
           <div className="rounded-2xl border border-trait bg-white p-4">
