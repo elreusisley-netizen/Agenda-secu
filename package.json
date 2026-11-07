@@ -1,0 +1,29 @@
+{
+  "name": "agenda-secu",
+  "private": true,
+  "version": "0.4.0",
+  "description": "AGENDA SECU — gestion des plannings mensuels des agents de sécurité (étape 4 : connexion)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:telephone": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "verifier": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.50.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-icons": "^5.5.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "~5.9.0",
+    "vite": "^7.1.0"
+  }
+}

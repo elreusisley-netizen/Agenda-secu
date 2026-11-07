@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+/*
+  Charte AGENDA SECU, relevée sur les maquettes validées.
+  - nuit : bleu nuit des en-têtes et du menu
+  - or   : jaune des boutons et de l'élément actif
+  - dispo / indispo / attente : codes couleur des disponibilités
+*/
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --color-nuit-950: #070b15;
+  --color-nuit-900: #0c1220;
+  --color-nuit-800: #161e30;
+  --color-nuit-700: #232c40;
+  --color-nuit-600: #3a4458;
+
+  --color-or-300: #ffe07a;
+  --color-or-400: #ffd02e;
+  --color-or-500: #ffc414;
+  --color-or-600: #e9ad00;
+
+  --color-fond: #f3f4f6;
+  --color-trait: #e7e9ee;
+
+  --color-dispo: #8bd99b;
+  --color-dispo-fonce: #14532d;
+  --color-indispo: #f7a1a1;
+  --color-indispo-fonce: #7f1d1d;
+  --color-attente: #ffc98a;
+  --color-attente-fonce: #7c3a03;
+
+  --color-confirme-fond: #dcf5e3;
+  --color-confirme-texte: #15803d;
+  --color-creneau-bleu: #dbe8fb;
+  --color-creneau-bleu-texte: #1e3a8a;
+
+  --radius-carte: 1.25rem;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-fond);
+  color: var(--color-nuit-900);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Zones sûres des iPhone (encoche et barre du bas) */
+.pt-securite {
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
+.pb-securite {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}

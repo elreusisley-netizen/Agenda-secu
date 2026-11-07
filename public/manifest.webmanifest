@@ -1,0 +1,17 @@
+{
+  "name": "AGENDA SECU",
+  "short_name": "AGENDA SECU",
+  "description": "Plannings et disponibilités des agents de sécurité",
+  "lang": "fr",
+  "start_url": "/#/connexion",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0c1220",
+  "theme_color": "#0c1220",
+  "icons": [
+    { "src": "/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
