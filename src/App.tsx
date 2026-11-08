@@ -17,7 +17,6 @@ import MotDePasseOublie from './pages/agent/MotDePasseOublie'
 import NouveauMotDePasse from './pages/agent/NouveauMotDePasse'
 import Notifications from './pages/agent/Notifications'
 import Profil from './pages/agent/Profil'
-import EcranAVenir from './pages/admin/EcranAVenir'
 import Agents from './pages/admin/Agents'
 import FicheAgent from './pages/admin/FicheAgent'
 import Parametres from './pages/admin/Parametres'
@@ -25,6 +24,7 @@ import SitesClients from './pages/admin/SitesClients'
 import PlanningMissions from './pages/admin/PlanningMissions'
 import MissionsAdmin from './pages/admin/Missions'
 import DisponibilitesEquipe from './pages/admin/DisponibilitesEquipe'
+import Rapports from './pages/admin/Rapports'
 import TableauDeBord from './pages/admin/TableauDeBord'
 
 /*
@@ -54,12 +54,7 @@ const ROUTES: { motif: string; acces: Acces; rubrique?: RubriqueAdmin; ecran: (p
   { motif: '/admin/agents', acces: GESTION, rubrique: 'agents', ecran: () => <Agents /> },
   { motif: '/admin/agents/:id', acces: GESTION, rubrique: 'agents', ecran: (p) => <FicheAgent id={p.id} /> },
   { motif: '/admin/sites', acces: GESTION, rubrique: 'sites', ecran: () => <SitesClients /> },
-  ...(['rapports'] as RubriqueAdmin[]).map((r) => ({
-    motif: `/admin/${r}`,
-    acces: GESTION as Acces,
-    rubrique: r,
-    ecran: () => <EcranAVenir rubrique={r} />,
-  })),
+  { motif: '/admin/rapports', acces: GESTION, rubrique: 'rapports', ecran: () => <Rapports /> },
 ]
 
 function Chargement() {

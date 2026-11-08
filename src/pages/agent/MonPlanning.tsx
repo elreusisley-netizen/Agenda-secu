@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { LuChevronLeft, LuChevronRight } from 'react-icons/lu'
+import { LuChevronLeft, LuChevronRight, LuDownload } from 'react-icons/lu'
+import { telecharger, nomFichier } from '../../lib/exports/fichiers'
+import { decompter, pdfAgent } from '../../lib/exports/rapports'
 import { BarreNavigation, EcranAgent, EnteteAgent, Feuille } from '../../components/agent/EcranAgent'
 import { BadgeStatut } from '../../components/agent/Badge'
 import { useAuth } from '../../auth/AuthContexte'
@@ -38,6 +40,31 @@ export default function MonPlanning() {
           <p className="mb-3 px-1 text-[13px] text-nuit-700">
             {duMois.length} vacation{duMois.length > 1 ? 's' : ''} · {Math.round(heures * 10) / 10} h
           </p>
+        )}
+
+        {duMois.length > 0 && profil && (
+          <button
+            onClick={() => {
+              const vacations = duMois.map((m) => ({
+                date: m.date,
+                hDebut: m.hDebut,
+                hFin: m.hFin,
+                agentId: profil.id,
+                agent: `${profil.prenom} ${profil.nom}`,
+                siteId: m.site.nom,
+                site: m.site.nom,
+                ville: m.site.ville,
+                client: null,
+                adresse: [m.site.adresse, [m.site.code_postal, m.site.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ') || null,
+                consignes: [m.consignes, m.site.consignes].filter(Boolean).join(' — ') || null,
+                ...decompter(m.date, m.hDebut, m.hFin),
+              }))
+              void telecharger(pdfAgent(annee, mois, `${profil.prenom} ${profil.nom}`, vacations), `Mon_planning_${nomFichier(titreMois(annee, mois))}.pdf`)
+            }}
+            className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-trait py-3 text-[14px] font-bold text-nuit-900 active:bg-fond"
+          >
+            <LuDownload className="h-4 w-4" /> Télécharger mon planning (PDF)
+          </button>
         )}
 
         <ul className="space-y-3">
