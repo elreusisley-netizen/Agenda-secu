@@ -33,7 +33,7 @@ export const RUBRIQUES: { id: RubriqueAdmin; libelle: string; vers: string; Icon
   { id: 'plannings', libelle: 'Plannings', vers: '/admin/plannings', Icone: LuCalendarDays, exigence: ['voir_plannings', 'gerer_affectations'] },
   { id: 'disponibilites', libelle: 'Disponibilités', vers: '/admin/disponibilites', Icone: LuCalendarCheck, exigence: 'voir_disponibilites' },
   { id: 'sites', libelle: 'Sites / Clients', vers: '/admin/sites', Icone: LuBuilding2, exigence: 'voir_sites' },
-  { id: 'rapports', libelle: 'Rapports', vers: '/admin/rapports', Icone: LuChartColumn, exigence: 'exporter' },
+  { id: 'rapports', libelle: 'Comptage des heures', vers: '/admin/rapports', Icone: LuChartColumn, exigence: 'exporter' },
   { id: 'parametres', libelle: 'Paramètres', vers: '/admin/parametres', Icone: LuSettings, exigence: 'admin' },
 ]
 

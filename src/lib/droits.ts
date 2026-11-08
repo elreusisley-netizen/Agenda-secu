@@ -8,7 +8,7 @@ export const DROITS = [
   { id: 'gerer_affectations', libelle: 'Gérer les affectations', aide: 'Proposer et confirmer des missions' },
   { id: 'suivre_reponses', libelle: 'Suivre les réponses', aide: 'Propositions acceptées ou refusées' },
   { id: 'voir_sites', libelle: 'Voir les sites et clients', aide: 'Adresses, accès et consignes' },
-  { id: 'exporter', libelle: 'Exporter', aide: 'Plannings en PDF et Excel' },
+  { id: 'exporter', libelle: 'Comptage des heures', aide: 'Voir les heures et exporter plannings et heures (PDF, Excel)' },
 ] as const
 
 export type Droit = (typeof DROITS)[number]['id']

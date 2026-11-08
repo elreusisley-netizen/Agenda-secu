@@ -78,7 +78,7 @@ export default function Rapports() {
 
   return (
     <CadreAdmin actif="rapports">
-      <h1 className="mb-1 text-[22px] font-bold text-nuit-900">Rapports et exports</h1>
+      <h1 className="mb-1 text-[22px] font-bold text-nuit-900">Comptage des heures</h1>
       <p className="mb-4 text-[13px] text-nuit-600">Plannings et heures du mois, en PDF (à imprimer ou envoyer) ou en Excel (pour la paie). Seules les vacations confirmées sont exportées.</p>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
