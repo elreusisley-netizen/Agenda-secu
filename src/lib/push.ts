@@ -47,6 +47,29 @@ function nomAppareil() {
   return 'Navigateur'
 }
 
+/** Explication lisible de l'échec d'appel à la fonction « envoyer-push » (pour le diagnostic). */
+async function detailErreur(error: unknown): Promise<string> {
+  const ctx = (error as { context?: Response } | null)?.context
+  let statut = 0
+  let texte = ''
+  try {
+    statut = ctx?.status ?? 0
+    texte = ctx ? await ctx.clone().text() : ''
+  } catch {
+    /* rien */
+  }
+  let message = ''
+  try {
+    message = (JSON.parse(texte) as { erreur?: string; message?: string }).erreur ?? JSON.parse(texte).message ?? ''
+  } catch {
+    message = texte.slice(0, 160)
+  }
+  if (statut === 404) return 'La fonction « envoyer-push » est introuvable (code 404) : vérifiez son nom exact dans Supabase.'
+  if (statut === 401) return 'Accès refusé (code 401) : désactivez « Verify JWT » dans les réglages de la fonction.'
+  if (message) return `Détail : ${message}${statut ? ` (code ${statut})` : ''}`
+  return statut ? `Code ${statut}.` : 'La fonction « envoyer-push » ne répond pas : est-elle bien déployée ?'
+}
+
 /** Active les notifications sur cet appareil (à appeler depuis un bouton). Renvoie un message d'erreur ou null. */
 export async function activerPush(profilId: string): Promise<string | null> {
   if (modeDemo || !supabase) return 'Indisponible en mode démonstration.'
@@ -56,7 +79,7 @@ export async function activerPush(profilId: string): Promise<string | null> {
   if (!reg) return 'Votre navigateur ne permet pas les notifications.'
   const { data, error } = await supabase.functions.invoke(FONCTION_PUSH, { body: { action: 'cle' } })
   const cle = (data as { cle?: string } | null)?.cle
-  if (error || !cle) return 'Service de notifications indisponible. Vérifiez que la fonction « envoyer-push » est installée dans Supabase.'
+  if (error || !cle) return 'Service de notifications indisponible. ' + (await detailErreur(error))
   try {
     let abo = await reg.pushManager.getSubscription()
     if (abo) {
@@ -91,7 +114,7 @@ export async function desactiverPush(): Promise<void> {
 export async function testerPush(): Promise<string | null> {
   if (!supabase) return 'Indisponible en mode démonstration.'
   const { data, error } = await supabase.functions.invoke(FONCTION_PUSH, { body: { action: 'test' } })
-  if (error) return 'L’essai a échoué. Vérifiez que la fonction « envoyer-push » est installée.'
+  if (error) return 'L’essai a échoué. ' + (await detailErreur(error))
   const r = data as { appareils?: number; recus?: number }
   if (!r.appareils) return 'Aucun appareil enregistré. Activez d’abord les notifications.'
   if (!r.recus) return 'L’envoi a été refusé par le service de notifications. Désactivez puis réactivez les notifications.'
