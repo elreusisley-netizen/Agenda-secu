@@ -6,6 +6,7 @@ import {
   DetailMission,
   FormulaireMission,
   NavMois,
+  nbSuggestions,
   Puce,
   Remplissage,
   useDroitsMissions,
@@ -30,7 +31,7 @@ function filtrer(m: Mission, f: Filtre) {
   return true
 }
 
-function CarteMission({ m, ouvrir }: { m: Mission; ouvrir: () => void }) {
+function CarteMission({ m, ouvrir, suggeres }: { m: Mission; ouvrir: () => void; suggeres: number }) {
   const compte = (s: string) => m.affectations.filter((a) => a.statut === s).length
   const proposees = compte('proposee')
   const acceptees = compte('acceptee')
@@ -48,6 +49,7 @@ function CarteMission({ m, ouvrir }: { m: Mission; ouvrir: () => void }) {
           {m.statut !== 'annulee' && acceptees > 0 && <Puce classe="bg-attente/40 text-attente-fonce">{acceptees} à confirmer</Puce>}
           {m.statut !== 'annulee' && proposees > 0 && <Puce classe="bg-creneau-bleu text-creneau-bleu-texte">{proposees} en attente</Puce>}
           {m.statut !== 'annulee' && refusees > 0 && <Puce classe="bg-indispo/40 text-indispo-fonce">{refusees} refus</Puce>}
+          {m.statut !== 'annulee' && nbConfirmes(m) < m.nb_agents_requis && suggeres > 0 && <Puce classe="bg-or-300/60 text-nuit-900">★ {suggeres} dispo</Puce>}
         </div>
       </div>
       <LuChevronRight className="h-4 w-4 shrink-0 text-nuit-600" />
@@ -128,7 +130,7 @@ export default function Missions() {
                   {visibles
                     .filter((m) => m.date === j)
                     .map((m) => (
-                      <CarteMission key={m.id} m={m} ouvrir={() => setOuverte(m.id)} />
+                      <CarteMission key={m.id} m={m} ouvrir={() => setOuverte(m.id)} suggeres={nbSuggestions(m, donnees)} />
                     ))}
                 </div>
               </section>

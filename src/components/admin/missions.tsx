@@ -3,7 +3,7 @@
   chargement du mois, formulaire de mission, choix des agents, fiche détaillée.
 */
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
-import { LuCheck, LuChevronLeft, LuChevronRight, LuClock, LuMapPin, LuSearch, LuTriangleAlert, LuX } from 'react-icons/lu'
+import { LuCheck, LuChevronLeft, LuChevronRight, LuClock, LuMapPin, LuSearch, LuSparkles, LuTriangleAlert, LuX } from 'react-icons/lu'
 import { useAuth } from '../../auth/AuthContexte'
 import { useDemo } from '../../demo/DemoContexte'
 import { listerClients, listerSites, type Client, type Site } from '../../lib/clients'
@@ -163,17 +163,31 @@ function SelecteurAgents({
   dejaSurMission,
   choisis,
   setChoisis,
+  besoin,
 }: {
   cible: Cible
   donnees: DonneesMois
   dejaSurMission: Map<string, Affectation>
   choisis: string[]
   setChoisis: (ids: string[]) => void
+  /** Nombre d'agents qu'il reste à trouver pour cette mission. */
+  besoin: number
 }) {
   const [recherche, setRecherche] = useState('')
   const creneau = creneauDe(cible.hDebut)
 
-  const lignes = useMemo(() => {
+  // Heures déjà prévues ce mois (confirmées ou acceptées) : sert à répartir équitablement.
+  const heures = useMemo(() => {
+    const h = new Map<string, number>()
+    for (const m of donnees.missions) {
+      if (m.id === cible.id || m.statut === 'annulee') continue
+      const duree = (new Date(m.fin).getTime() - new Date(m.debut).getTime()) / 36e5
+      for (const a of m.affectations) if (ENGAGEES.includes(a.statut)) h.set(a.agent_id, (h.get(a.agent_id) ?? 0) + duree)
+    }
+    return h
+  }, [donnees, cible.id])
+
+  const toutes = useMemo(() => {
     const autres = donnees.missions.filter((m) => m.id !== cible.id && m.statut !== 'annulee' && seChevauchent(m, cible))
     return donnees.agents
       .filter((a) => a.actif)
@@ -181,7 +195,6 @@ function SelecteurAgents({
         const deja = dejaSurMission.get(a.id)
         return !deja || deja.statut === 'refusee' || deja.statut === 'annulee'
       })
-      .filter((a) => nomAgent(a).toLowerCase().includes(recherche.trim().toLowerCase()))
       .map((a) => {
         const dispo = (donnees.dispos[`${a.id}|${cible.date}|${creneau}`] ?? 'aucune') as StatutDispo | 'aucune'
         let engage: Mission | undefined
@@ -191,58 +204,119 @@ function SelecteurAgents({
           if (af && ENGAGEES.includes(af.statut)) engage = m
           else if (af?.statut === 'proposee') propose = m
         }
-        return { a, dispo, engage, propose, deja: dejaSurMission.get(a.id) }
+        const deja = dejaSurMission.get(a.id)
+        const h = heures.get(a.id) ?? 0
+        // Suggéré : a dit être disponible, libre à cet horaire, n'a pas refusé cette mission.
+        const suggere = dispo === 'disponible' && !engage && !propose && deja?.statut !== 'refusee'
+        return { a, dispo, engage, propose, deja, h, suggere }
       })
-      .sort((x, y) => Number(!!x.engage) - Number(!!y.engage) || DISPO[x.dispo].ordre - DISPO[y.dispo].ordre || nomAgent(x.a).localeCompare(nomAgent(y.a)))
-  }, [donnees, cible, dejaSurMission, recherche, creneau])
+  }, [donnees, cible, dejaSurMission, creneau, heures])
+
+  const suggestions = toutes.filter((l) => l.suggere).sort((x, y) => x.h - y.h || nomAgent(x.a).localeCompare(nomAgent(y.a)))
+  const rang = new Map(suggestions.map((l, i) => [l.a.id, i]))
+  const lignes = toutes
+    .filter((l) => nomAgent(l.a).toLowerCase().includes(recherche.trim().toLowerCase()))
+    .sort(
+      (x, y) =>
+        (rang.get(x.a.id) ?? 999) - (rang.get(y.a.id) ?? 999) ||
+        Number(!!x.engage) - Number(!!y.engage) ||
+        DISPO[x.dispo].ordre - DISPO[y.dispo].ordre ||
+        nomAgent(x.a).localeCompare(nomAgent(y.a)),
+    )
 
   const basculer = (id: string) => setChoisis(choisis.includes(id) ? choisis.filter((x) => x !== id) : [...choisis, id])
   const total = donnees.agents.filter((a) => a.actif).length
+  const nbSuggeres = Math.min(Math.max(besoin, 0), suggestions.length)
+  const meilleurs = suggestions.slice(0, nbSuggeres).map((l) => l.a.id)
+  const dejaChoisis = meilleurs.length > 0 && meilleurs.every((id) => choisis.includes(id))
 
   return (
     <div>
       <p className="text-[13px] font-medium text-nuit-700">
         Agents à qui proposer la mission <span className="font-normal text-nuit-600">— disponibilités : {creneau === 'jour' ? 'journée' : 'nuit'} du {dateCourte(cible.date)}</span>
       </p>
+
+      {/* Suggestions automatiques : on peut toujours choisir librement dans la liste en dessous. */}
+      <div className="mt-2 rounded-lg border border-or-500/50 bg-or-300/15 p-2.5">
+        {suggestions.length > 0 ? (
+          <>
+            <p className="flex items-center gap-1.5 text-[13px] font-bold text-nuit-900">
+              <LuSparkles className="h-4 w-4 text-or-600" />
+              {suggestions.length} agent{suggestions.length > 1 ? 's disponibles et libres' : ' disponible et libre'}
+            </p>
+            <p className="mt-0.5 text-[12px] font-normal text-nuit-700">
+              {suggestions
+                .slice(0, 4)
+                .map((l) => `${nomAgent(l.a)} (${Math.round(l.h)} h)`)
+                .join(', ')}
+              {suggestions.length > 4 && '…'} — classés par heures déjà prévues ce mois.
+            </p>
+            {nbSuggeres > 0 && !dejaChoisis && (
+              <button
+                type="button"
+                onClick={() => setChoisis([...new Set([...choisis, ...meilleurs])])}
+                className="mt-2 rounded-lg bg-or-500 px-3 py-1.5 text-[12px] font-bold text-nuit-900"
+              >
+                Choisir {nbSuggeres > 1 ? `les ${nbSuggeres} suggérés` : 'le suggéré'}
+              </button>
+            )}
+          </>
+        ) : (
+          <p className="text-[12px] font-normal text-nuit-700">
+            <b>Aucune suggestion :</b> aucun agent libre n’a indiqué être disponible ce {creneau === 'jour' ? 'jour' : 'soir'}. Vous pouvez quand même choisir librement ci-dessous.
+          </p>
+        )}
+      </div>
+
       {total > 6 && (
         <div className="relative mt-2">
           <LuSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-nuit-600" />
           <input value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Rechercher un agent" className={CHAMP + ' mt-0 pl-9'} />
         </div>
       )}
-      <div className="mt-2 max-h-64 divide-y divide-trait overflow-y-auto rounded-lg border border-trait">
+      <div className="mt-2 max-h-72 divide-y divide-trait overflow-y-auto rounded-lg border border-trait">
         {lignes.length === 0 && <p className="p-3 text-[13px] text-nuit-600">{total === 0 ? 'Aucun agent actif. Créez d’abord des agents.' : 'Aucun autre agent à proposer.'}</p>}
-        {lignes.map(({ a, dispo, engage, propose, deja }) => (
-          <label key={a.id} className={`flex items-start gap-3 px-3 py-2.5 ${engage ? 'opacity-60' : 'cursor-pointer active:bg-fond'}`}>
-            <input
-              type="checkbox"
-              className="mt-0.5 h-4 w-4 accent-[var(--color-or-500)]"
-              checked={choisis.includes(a.id)}
-              disabled={Boolean(engage)}
-              onChange={() => basculer(a.id)}
-            />
+        {lignes.map(({ a, dispo, engage, propose, deja, h, suggere }) => (
+          <label key={a.id} className="flex cursor-pointer items-start gap-3 px-3 py-2.5 active:bg-fond">
+            <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[var(--color-or-500)]" checked={choisis.includes(a.id)} onChange={() => basculer(a.id)} />
             <span className="min-w-0 flex-1">
               <span className="flex flex-wrap items-center gap-1.5 text-[14px] font-semibold text-nuit-900">
                 {nomAgent(a)}
+                {suggere && <Puce classe="bg-or-500 text-nuit-900">★ Suggéré</Puce>}
                 <Puce classe={DISPO[dispo].classe}>{DISPO[dispo].libelle}</Puce>
                 {deja && <Puce classe={STATUTS[deja.statut].classe}>{deja.statut === 'refusee' ? 'A refusé' : 'Annulée'}</Puce>}
               </span>
+              <span className="mt-0.5 block text-[12px] font-normal text-nuit-600">{Math.round(h)} h prévues ce mois</span>
               {engage && (
-                <span className="mt-0.5 block text-[12px] text-red-700">
-                  Déjà engagé {engage.hDebut}–{engage.hFin} · {engage.site_nom}
+                <span className="mt-0.5 block text-[12px] font-normal text-red-700">
+                  Déjà engagé {engage.hDebut}–{engage.hFin} · {engage.site_nom}. Vous pouvez le proposer, mais il ne pourra être confirmé que si l’autre mission est libérée.
                 </span>
               )}
               {!engage && propose && (
-                <span className="mt-0.5 block text-[12px] text-attente-fonce">
+                <span className="mt-0.5 block text-[12px] font-normal text-attente-fonce">
                   Autre proposition en attente {propose.hDebut}–{propose.hFin} · {propose.site_nom}
                 </span>
               )}
+              {!engage && dispo === 'indisponible' && <span className="mt-0.5 block text-[12px] font-normal text-indispo-fonce">A indiqué être indisponible : à confirmer avec lui.</span>}
             </span>
           </label>
         ))}
       </div>
+      <p className="mt-1 text-[11px] font-normal text-nuit-600">Les suggestions ne sont qu’une aide : vous pouvez cocher n’importe quel agent.</p>
     </div>
   )
+}
+
+/** Nombre d'agents suggérés pour une mission (disponibles, libres, pas déjà sur la mission). */
+export function nbSuggestions(m: Mission, donnees: DonneesMois): number {
+  const creneau = creneauDe(m.hDebut)
+  const surMission = new Set(m.affectations.map((a) => a.agent_id))
+  const occupes = new Set(
+    donnees.missions
+      .filter((x) => x.id !== m.id && x.statut !== 'annulee' && seChevauchent(x, m))
+      .flatMap((x) => x.affectations.filter((a) => ACTIVES.includes(a.statut)).map((a) => a.agent_id)),
+  )
+  return donnees.agents.filter((a) => a.actif && !surMission.has(a.id) && !occupes.has(a.id) && donnees.dispos[`${a.id}|${m.date}|${creneau}`] === 'disponible').length
 }
 
 // ---------- Formulaire de création / modification ----------
@@ -353,7 +427,7 @@ export function FormulaireMission({
         </label>
         {!mission && cible && (
           <div className="col-span-2">
-            <SelecteurAgents cible={cible} donnees={donnees} dejaSurMission={dejaSurMission} choisis={s.agents} setChoisis={(agents) => maj({ agents })} />
+            <SelecteurAgents cible={cible} donnees={donnees} dejaSurMission={dejaSurMission} choisis={s.agents} setChoisis={(agents) => maj({ agents })} besoin={s.nb} />
             <p className="mt-1 text-[12px] font-normal text-nuit-600">Facultatif : vous pourrez proposer la mission plus tard.</p>
           </div>
         )}
@@ -503,11 +577,12 @@ export function DetailMission({
       {gerer && !annulee && !proposition && (
         <button onClick={() => setProposition(true)} className="mt-3 w-full rounded-xl border border-dashed border-or-500 py-2.5 text-[13px] font-bold text-nuit-900 active:bg-or-300/30">
           + Proposer à d’autres agents
+          {!complet && nbSuggestions(m, donnees) > 0 && <span className="ml-1 font-semibold text-or-600">({nbSuggestions(m, donnees)} suggéré{nbSuggestions(m, donnees) > 1 ? 's' : ''})</span>}
         </button>
       )}
       {proposition && (
         <div className="mt-3 rounded-xl bg-fond/60 p-3">
-          <SelecteurAgents cible={m} donnees={donnees} dejaSurMission={dejaSurMission} choisis={choisis} setChoisis={setChoisis} />
+          <SelecteurAgents cible={m} donnees={donnees} dejaSurMission={dejaSurMission} choisis={choisis} setChoisis={setChoisis} besoin={m.nb_agents_requis - m.affectations.filter((a) => ACTIVES.includes(a.statut)).length} />
           <div className="mt-2 flex justify-end gap-2">
             <button onClick={() => (setProposition(false), setChoisis([]))} className="rounded-xl bg-white px-3 py-2 text-[13px] font-semibold text-nuit-900">
               Fermer
