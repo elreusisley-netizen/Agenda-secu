@@ -33,13 +33,11 @@ export default function Profil() {
             <LuPhone className="h-5 w-5 text-nuit-600" /> {profil.telephone || 'Téléphone non renseigné'}
           </p>
         </div>
-        {!estInstallee() && (
-          <button onClick={() => setGuide(true)} className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-trait px-4 py-3.5 text-left text-[15px] font-semibold">
-            <LuSmartphone className="h-5 w-5 text-nuit-600" />
-            <span className="flex-1">Installer l'application</span>
-            <LuChevronRight className="h-5 w-5" />
-          </button>
-        )}
+        <button onClick={() => setGuide(true)} className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-trait px-4 py-3.5 text-left text-[15px] font-semibold">
+          <LuSmartphone className="h-5 w-5 text-nuit-600" />
+          <span className="flex-1">{estInstallee() ? 'Guide d’installation (iPhone / Android)' : 'Installer l’application'}</span>
+          <LuChevronRight className="h-5 w-5" />
+        </button>
         <div className="mt-3">
           <CartePush />
         </div>

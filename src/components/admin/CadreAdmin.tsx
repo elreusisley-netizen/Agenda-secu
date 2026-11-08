@@ -19,6 +19,7 @@ import { Lien, naviguer } from '../../lib/routeur'
 import { useAuth } from '../../auth/AuthContexte'
 import { modeDemo } from '../../lib/supabase'
 import { CartePush } from '../CartePush'
+import { GuideInstallation } from '../agent/Installation'
 import { chargerNotifications, depuis, marquerLues, type Notification } from '../../lib/espaceAgent'
 import { autorise, type Exigence } from '../../lib/droits'
 
@@ -151,6 +152,7 @@ export function CadreAdmin({ actif, children }: { actif: RubriqueAdmin; children
   const [cloche, setCloche] = useState(false)
   const [compte, setCompte] = useState(false)
   const [reglagePush, setReglagePush] = useState(false)
+  const [guide, setGuide] = useState(false)
   const { profil, deconnexion } = useAuth()
   const nomAffiche = profil?.role === 'chef' ? profil.prenom || 'Chef' : profil?.prenom || 'Admin'
 
@@ -226,6 +228,15 @@ export function CadreAdmin({ actif, children }: { actif: RubriqueAdmin; children
                   Notifications sur cet appareil
                 </button>
                 <button
+                  onClick={() => {
+                    setCompte(false)
+                    setGuide(true)
+                  }}
+                  className="block w-full rounded-lg px-3 py-2 text-left hover:bg-fond"
+                >
+                  Installer l'application
+                </button>
+                <button
                   onClick={async () => {
                     await deconnexion()
                     naviguer('/connexion', true)
@@ -239,6 +250,7 @@ export function CadreAdmin({ actif, children }: { actif: RubriqueAdmin; children
           </div>
         </header>
         <main className="min-w-0 flex-1 px-4 py-5 lg:px-8 lg:py-6">{children}</main>
+        {guide && <GuideInstallation fermer={() => setGuide(false)} />}
         {reglagePush && (
           <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={() => setReglagePush(false)} role="dialog" aria-modal="true">
             <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-t-2xl bg-white p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:rounded-2xl">

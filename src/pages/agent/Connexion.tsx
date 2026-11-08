@@ -4,6 +4,7 @@ import { Coche } from '../../components/Logo'
 import { espaceDe, useAuth } from '../../auth/AuthContexte'
 import { modeDemo } from '../../lib/supabase'
 import { Lien, naviguer } from '../../lib/routeur'
+import { GuideInstallation, estInstallee } from '../../components/agent/Installation'
 
 /** Illustration de fond (agent de dos, gilet « SÉCURITÉ ») — dessin original, remplaçable par une vraie photo. */
 function IllustrationAgent() {
@@ -45,6 +46,7 @@ function IllustrationAgent() {
 }
 
 export default function Connexion() {
+  const [guide, setGuide] = useState(false)
   const [email, setEmail] = useState('')
   const [motDePasse, setMotDePasse] = useState('')
   const [visible, setVisible] = useState(false)
@@ -132,6 +134,11 @@ export default function Connexion() {
           <Lien vers="/mot-de-passe-oublie" className="mt-3 text-center text-[15px] text-white">
             Mot de passe oublié ?
           </Lien>
+          {!estInstallee() && (
+            <button type="button" onClick={() => setGuide(true)} className="mt-4 text-center text-[14px] text-white/70 underline underline-offset-4">
+              Installer l'application sur mon téléphone
+            </button>
+          )}
           {modeDemo && (
             <p className="mt-auto pt-6 text-center text-xs leading-relaxed text-white/50">
               Démo : laissez les champs vides pour l'espace agent,
@@ -141,6 +148,7 @@ export default function Connexion() {
           )}
         </form>
       </div>
+      {guide && <GuideInstallation fermer={() => setGuide(false)} />}
     </div>
   )
 }
