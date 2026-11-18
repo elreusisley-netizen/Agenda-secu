@@ -58,6 +58,25 @@ button {
 }
 
 /* Zones sûres des iPhone (encoche et barre du bas) */
+:root {
+  /* Hauteur de la barre d'état de l'iPhone quand l'appli est installée (0 ailleurs) */
+  --haut-securite: env(safe-area-inset-top, 0px);
+}
+/* Appli installée sur iPhone : on décale l'en-tête sous l'heure et la batterie */
+.entete-securite {
+  padding-top: calc(var(--haut-securite) + 0.75rem);
+}
+.tiroir-securite {
+  padding-top: calc(var(--haut-securite) + 1.5rem);
+}
+.menu-securite {
+  top: calc(var(--haut-securite) + 4rem);
+}
+@media (min-width: 640px) {
+  .menu-securite {
+    top: 2.75rem;
+  }
+}
 .pt-securite {
   padding-top: max(1rem, env(safe-area-inset-top));
 }

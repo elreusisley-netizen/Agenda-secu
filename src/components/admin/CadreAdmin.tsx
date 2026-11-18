@@ -68,7 +68,7 @@ function MenuDeroulant({ ouvert, fermer, children }: { ouvert: boolean; fermer: 
   return (
     <>
       <button className="fixed inset-0 z-30 cursor-default" onClick={fermer} aria-label="Fermer" />
-      <div className="fixed inset-x-3 top-16 z-40 rounded-2xl border border-trait bg-white p-2 text-sm shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-11 sm:w-80">
+      <div className="fixed inset-x-3 menu-securite z-40 rounded-2xl border border-trait bg-white p-2 text-sm shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:w-80">
         {children}
       </div>
     </>
@@ -169,7 +169,7 @@ export function CadreAdmin({ actif, children }: { actif: RubriqueAdmin; children
       {/* Menu en tiroir (petits écrans) */}
       {tiroir && (
         <div className="fixed inset-0 z-50 flex lg:hidden" role="dialog" aria-modal="true">
-          <div className="flex w-[260px] flex-col bg-nuit-900 px-4 py-6">
+          <div className="flex w-[260px] flex-col overflow-y-auto bg-nuit-900 px-4 pb-6 tiroir-securite">
             <div className="mb-8 flex items-center justify-between px-2">
               <Logo taille="petit" />
               <button onClick={() => setTiroir(false)} aria-label="Fermer le menu" className="text-white">
@@ -183,7 +183,11 @@ export function CadreAdmin({ actif, children }: { actif: RubriqueAdmin; children
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-trait bg-white px-4 py-3 lg:justify-end lg:px-8">
+        <header
+          className="sticky top-0 z-30 flex items-center gap-3 border-b border-trait px-4 pb-3 entete-securite lg:justify-end lg:px-8"
+          // Bande bleu nuit derrière l'heure et la batterie (appli installée sur iPhone), puis fond blanc
+          style={{ background: 'linear-gradient(#0c1220 0 var(--haut-securite), #ffffff var(--haut-securite))' }}
+        >
           <button onClick={() => setTiroir(true)} aria-label="Ouvrir le menu" className="rounded-lg p-1.5 text-nuit-900 lg:hidden">
             <LuMenu className="h-6 w-6" />
           </button>
