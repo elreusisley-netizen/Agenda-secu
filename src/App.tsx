@@ -13,6 +13,7 @@ import Disponibilites from './pages/agent/Disponibilites'
 import MissionDetail from './pages/agent/MissionDetail'
 import Missions from './pages/agent/Missions'
 import MonPlanning from './pages/agent/MonPlanning'
+import MesHeures from './pages/agent/MesHeures'
 import MotDePasseOublie from './pages/agent/MotDePasseOublie'
 import NouveauMotDePasse from './pages/agent/NouveauMotDePasse'
 import Notifications from './pages/agent/Notifications'
@@ -44,6 +45,7 @@ const ROUTES: { motif: string; acces: Acces; rubrique?: RubriqueAdmin; ecran: (p
   { motif: '/agent/missions', acces: AGENT, ecran: () => <Missions /> },
   { motif: '/agent/missions/:id', acces: AGENT, ecran: (p) => <MissionDetail id={p.id} /> },
   { motif: '/agent/planning', acces: AGENT, ecran: () => <MonPlanning /> },
+  { motif: '/agent/heures', acces: AGENT, ecran: () => <MesHeures /> },
   { motif: '/agent/profil', acces: AGENT, ecran: () => <Profil /> },
   { motif: '/agent/notifications', acces: AGENT, ecran: () => <Notifications /> },
   { motif: '/admin', acces: GESTION, rubrique: 'tableau', ecran: () => <TableauDeBord /> },

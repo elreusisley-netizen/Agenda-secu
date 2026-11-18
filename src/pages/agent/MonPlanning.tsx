@@ -37,8 +37,13 @@ export default function MonPlanning() {
         {!missions && !erreur && <p className="py-12 text-center text-sm text-nuit-600">Chargement…</p>}
         {missions && duMois.length === 0 && <p className="py-12 text-center text-sm text-nuit-600">Aucune mission confirmée ce mois-ci.</p>}
         {duMois.length > 0 && (
-          <p className="mb-3 px-1 text-[13px] text-nuit-700">
-            {duMois.length} vacation{duMois.length > 1 ? 's' : ''} · {Math.round(heures * 10) / 10} h
+          <p className="mb-3 flex items-center justify-between px-1 text-[13px] text-nuit-700">
+            <span>
+              {duMois.length} vacation{duMois.length > 1 ? 's' : ''} · {Math.round(heures * 10) / 10} h
+            </span>
+            <Lien vers="/agent/heures" className="font-semibold text-or-600 underline">
+              Mes heures
+            </Lien>
           </p>
         )}
 

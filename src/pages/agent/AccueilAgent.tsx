@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { IconType } from 'react-icons'
-import { LuBell, LuBriefcaseBusiness, LuCalendarCheck, LuCalendarCheck2, LuLogOut, LuMenu, LuSmartphone, LuUser, LuX } from 'react-icons/lu'
+import { LuBell, LuBriefcaseBusiness, LuCalendarCheck, LuCalendarCheck2, LuLogOut, LuMenu, LuSmartphone, LuUser, LuX, LuClock } from 'react-icons/lu'
 import { BarreNavigation, EcranAgent } from '../../components/agent/EcranAgent'
 import { ResumeMission } from '../../components/agent/CarteMission'
 import { Logo } from '../../components/Logo'
@@ -39,6 +39,7 @@ function Tiroir({ fermer }: { fermer: () => void }) {
     { vers: '/agent/planning', libelle: 'Mon planning' },
     { vers: '/agent/missions', libelle: 'Missions proposées' },
     { vers: '/agent/disponibilites', libelle: 'Mes disponibilités' },
+    { vers: '/agent/heures', libelle: 'Mes heures' },
     { vers: '/agent/notifications', libelle: 'Notifications' },
     { vers: '/agent/profil', libelle: 'Profil' },
   ]
@@ -98,7 +99,8 @@ export default function AccueilAgent() {
       <section className="grid grid-cols-2 gap-3 px-4 pb-5">
         <Tuile vers="/agent/planning" libelle="Mon planning" Icone={LuCalendarCheck} />
         <Tuile vers="/agent/missions" libelle="Missions proposées" Icone={LuBriefcaseBusiness} pastille={propositions} />
-        <Tuile vers="/agent/disponibilites" libelle="Mes disponibilités" Icone={LuCalendarCheck2} large />
+        <Tuile vers="/agent/disponibilites" libelle="Mes disponibilités" Icone={LuCalendarCheck2} />
+        <Tuile vers="/agent/heures" libelle="Mes heures" Icone={LuClock} />
       </section>
 
       <main className="flex-1 rounded-t-[1.75rem] bg-fond px-4 pt-5">
